@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Doodle Jump</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 500px;
+            max-height: 800px;
+            background: #000;
+            overflow: hidden;
+        }
+
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #87CEEB 0%, #98D8E8 50%, #B0E0E6 100%);
+        }
+
+        #ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        #score {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 15;
+            display: none;
+        }
+
+        #scoreImage {
+            width: auto;
+            height: 40px;
+            max-width: 150px;
+            display: block;
+        }
+
+        #scoreText {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 
+                1px 1px 2px rgba(0, 0, 0, 0.8),
+                0 0 4px rgba(0, 0, 0, 0.5);
+            font-family: 'Arial', sans-serif;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        #highScore {
+            display: none;
+        }
+
+        #startScreen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #fff;
+            z-index: 20;
+            pointer-events: auto;
+            background: transparent;
+            padding: 0;
+            border-radius: 0;
+            border: none;
+            box-shadow: none;
+        }
+
+        #startScreen h1 {
+            display: none;
+        }
+
+        #startScreen p {
+            display: none;
+        }
+
+        #flagImage {
+            position: absolute;
+            top: calc(50% - 320px);
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            height: auto;
+            max-width: 80vw;
+            z-index: 20;
+            display: block;
+        }
+
+        #startBtn {
+            position: absolute;
+            top: calc(50% - 320px + 400px);
+            left: 50%;
+            margin: 0;
+            padding: 0;
+            background: none;
+            border: none;
+            cursor: pointer;
+            pointer-events: auto;
+            display: block;
+            z-index: 21;
+            transform: translateX(-50%);
+        }
+        
+        #startBtn img {
+            display: block;
+            width: 480px;
+            height: auto;
+            max-width: 75vw;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 0.9;
+            }
+        }
+
+
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 20;
+            pointer-events: auto;
+            display: none;
+        }
+
+        #gameOverTitle {
+            font-size: 36px;
+            margin-bottom: -100px;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            font-weight: bold;
+            font-family: 'Press Start 2P', cursive;
+            position: relative;
+            top: -80px;
+            cursor: pointer;
+            pointer-events: auto;
+            transition: opacity 0.2s;
+            white-space: nowrap;
+        }
+
+        #gameOverTitle:hover {
+            opacity: 0.8;
+        }
+
+        #gameOverTitle:active {
+            opacity: 0.6;
+        }
+
+        #finalScoreContainer {
+            position: relative;
+            display: inline-block;
+            margin-bottom: -60px;
+            transform: translateY(60px);
+        }
+
+        #finalScoreImage {
+            width: auto;
+            height: 60px;
+            max-width: 200px;
+            display: block;
+        }
+
+        #finalScore {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 
+                1px 1px 2px rgba(0, 0, 0, 0.8),
+                0 0 4px rgba(0, 0, 0, 0.5);
+            font-family: 'Arial', sans-serif;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+
+        .hidden {
+            display: none !important;
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            gap: 150px;
+            z-index: 15;
+            pointer-events: auto;
+        }
+
+        .controlBtn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            backdrop-filter: none;
+            transition: all 0.1s;
+            position: relative;
+            overflow: visible;
+        }
+
+        .controlBtn img {
+            width: 130%;
+            height: 130%;
+            object-fit: cover;
+            pointer-events: none;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .controlBtn:active {
+            transform: scale(0.9);
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        @media (max-width: 500px) {
+            #gameContainer {
+                max-width: 100%;
+                max-height: 100%;
+            }
+            
+            #startScreen h1 {
+                font-size: 36px;
+            }
+            
+            #score {
+                top: 8px;
+                right: 8px;
+            }
+
+            #scoreImage {
+                height: 30px;
+                max-width: 120px;
+            }
+
+            #scoreText {
+                font-size: 14px;
+            }
+
+            #gameOverTitle {
+                font-size: 28px;
+                margin-bottom: 20px;
+            }
+
+            #finalScoreImage {
+                height: 45px;
+                max-width: 150px;
+            }
+
+            #finalScore {
+                font-size: 18px;
+            }
+
+            
+            #highScore {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+    <div id="ui">
+            <div id="score">
+                <img id="scoreImage" src="https://aquamarine-past-gamefowl-916.mypinata.cloud/ipfs/bafybeiheenqd6cs75o5bmf7rgxeoat6hojd7d5ncxi57dqz5gs3kenjfxe" alt="Score">
+                <span id="scoreText">0</span>
+            </div>
+            <div id="highScore">Рекорд: 0</div>
+            <div id="controls">
+                <div class="controlBtn" id="leftBtn">
+                    <img src="https://aquamarine-past-gamefowl-916.mypinata.cloud/ipfs/bafybeifugsuqinrxkfkgzccckpnmuppp33zvl5blydhynjf6qgxt3n73si" alt="Влево">
+                </div>
+                <div class="controlBtn" id="rightBtn">
+                    <img src="https://aquamarine-past-gamefowl-916.mypinata.cloud/ipfs/bafybeihexo7w6x4nr4nb57gard3mtz6wpq7ujwrwgldwdjc76rwkenaclu" alt="Вправо">
+                </div>
+            </div>
+        </div>
+        <img id="flagImage" src="https://aquamarine-past-gamefowl-916.mypinata.cloud/ipfs/bafybeia3jddld5twkyc2732263ghj7vwnbea7axpyhbsaxgaufz7oppism" alt="Флаг">
+        <button id="startBtn">
+            <img src="https://aquamarine-past-gamefowl-916.mypinata.cloud/ipfs/bafkreigkl5oogmefhcsuhi572uxa346gznpsyqxlt6vf337cogkuqlvcqq" alt="Начать игру">
+        </button>
+        <div id="startScreen">
+            <h1>Doodle Jump</h1>
+            <p>Используйте стрелки или кнопки<br>для управления</p>
+            <p>Прыгайте на платформы<br>и поднимайтесь выше!</p>
+    </div>
+    <div id="gameOver">
+        <h2 id="gameOverTitle">Game Over</h2>
+        <div id="finalScoreContainer">
+            <img id="finalScoreImage" src="https://aquamarine-past-gamefowl-916.mypinata.cloud/ipfs/bafybeiheenqd6cs75o5bmf7rgxeoat6hojd7d5ncxi57dqz5gs3kenjfxe" alt="Score">
+            <span id="finalScore">0</span>
+        </div>
+    </div>
+    </div>
+
+    <script>
+        // Telegram WebApp инициализация
+        let tg = window.Telegram?.WebApp;
+        if (tg) {
+            tg.ready();
+            tg.expand();
+        }
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+        const scoreTextEl = document.getElementById('scoreText');
+        const highScoreEl = document.getElementById('highScore');
+        const gameOverEl = document.getElementById('gameOver');
+        const finalScoreEl = document.getElementById('finalScore');
+        const startScreen = document.getElementById('startScreen');
+        const startBtn = document.getElementById('startBtn');
+        const gameOverTitle = document.getElementById('gameOverTitle');
+        const leftBtn = document.getElementById('leftBtn');
+        const rightBtn = document.getElementById('rightBtn');
+
+        // Настройка canvas
+        function resizeCanvas() {
+            const container = document.getElementById('gameContainer');
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Игровые переменные
+        let gameState = 'start'; // start, playing, gameOver
+        let highScore = 0;
+        let score = 0;
+        let cameraY = 0;
+        let highestPlayerY = 0; // Максимальная высота, на которую поднялся игрок (минимальное значение player.y)
+        
+        // Спрайт огня от реактивного ранца
+        
+        // Фоновое изображение
+        const backgroundImage = new Image();
+        backgroundImage.src = 'https://aquamarine-past-gamefowl-916.mypinata.cloud/ipfs/bafybeifwinisuha2cu7hwmmfa7wyt5nl2ullhmwnvv4q5swdv7s6krmt7y';
+        let backgroundLoaded = false;
+        backgroundImage.onload = () => {
+            backgroundLoaded = true;
+        };
+
+        // Изображения персонажа
+        const playerImageLeft = new Image(); // Персонаж смотрит влево
+        playerImageLeft.src = 'https://aquamarine-past-gamefowl-916.mypinata.cloud/ipfs/bafybeibs3byjdd3tmqt4fod5ll6x7om3qqjgtsoicgayqr2g2e4qftez7a';
+        let playerImageLeftLoaded = false;
+        playerImageLeft.onload = () => {
+            playerImageLeftLoaded = true;
+            updatePlayerSize();
+        };
+
+        const playerImageRight = new Image(); // Персонаж смотрит вправо
+        playerImageRight.src = 'https://aquamarine-past-gamefowl-916.mypinata.cloud/ipfs/bafybeie5cezd2vxdqdnqynqstkh5tjmenuruoc3pg2i65hx2gsxenojy7y';
+        let playerImageRightLoaded = false;
+        playerImageRight.onload = () => {
+            playerImageRightLoaded = true;
+            updatePlayerSize();
+        };
+
+        // Функция обновления размера персонажа
+        function updatePlayerSize() {
+            if (playerImageLeftLoaded || playerImageRightLoaded) {
+                const img = playerImageLeftLoaded ? playerImageLeft : playerImageRight;
+                // Увеличиваем размер персонажа
+                const maxWidth = 60; // Было 50
+                const maxHeight = 70; // Было 60
+                const scale = Math.min(maxWidth / img.width, maxHeight / img.height);
+                player.width = img.width * scale;
+                player.height = img.height * scale;
+            }
+        }
+
+        // Спрайты платформ
+        const platformImage = new Image(); // Обычная платформа
+        let platformImageLoaded = false;
+        platformImage.onload = () => {
+            platformImageLoaded = true;
+            console.log('Платформа загружена:', platformImage.width, 'x', platformImage.height);
+        };
+        platformImage.onerror = (e) => {
+            console.error('Ошибка загрузки изображения платформы:', e);
+            platformImageLoaded = false;
+        };
+        // Загружаем изображение
+        platformImage.src = 'https://aquamarine-past-gamefowl-916.mypinata.cloud/ipfs/bafybeignsx6nwrqdfykr5tkqcmbsqkve42uz5mvgmrrrtu46gf7vrqbxbm';
+
+        const movingPlatformImage = new Image(); // Движущаяся платформа (используем тот же спрайт)
+        let movingPlatformImageLoaded = false;
+        movingPlatformImage.onload = () => {
+            movingPlatformImageLoaded = true;
+        };
+        movingPlatformImage.onerror = (e) => {
+            console.error('Ошибка загрузки изображения движущейся платформы:', e);
+            movingPlatformImageLoaded = false;
+        };
+        // Используем тот же спрайт что и для обычных платформ
+        movingPlatformImage.src = 'https://aquamarine-past-gamefowl-916.mypinata.cloud/ipfs/bafybeignsx6nwrqdfykr5tkqcmbsqkve42uz5mvgmrrrtu46gf7vrqbxbm';
+
+        // Игрок
+        const player = {
+            x: 0,
+            y: 0,
+            width: 40,
+            height: 50,
+            velocityX: 0,
+            velocityY: 0,
+            onPlatform: false,
+            hasJetpack: false,
+            jetpackStartTime: 0, // Время активации ранца (в миллисекундах)
+            immunityEndTime: 0, // Время окончания иммунитета (в миллисекундах)
+            monstersHiddenUntil: 0, // Время до которого монстры скрыты
+            jetpacksHiddenUntil: 0 // Время до которого ранцы скрыты
+        };
+
+        // Платформы
+        let platforms = [];
+        const PLATFORM_WIDTH = 120;
+        const PLATFORM_HEIGHT = 30;
+        const PLATFORM_SPACING = 70;
+
+        // Изображения монстров
+        const monsterImageLeft = new Image(); // Монстр смотрит влево
+        monsterImageLeft.src = 'https://aquamarine-past-gamefowl-916.mypinata.cloud/ipfs/bafybeib37u73k7k33uxlemsj6ubwn5kzrc55w4ba72dc2ocsv5ea7cyzuy';
+        let monsterImageLeftLoaded = false;
+        monsterImageLeft.onload = () => {
+            monsterImageLeftLoaded = true;
+        };
+
+        const monsterImageRight = new Image(); // Монстр смотрит вправо
+        monsterImageRight.src = 'https://aquamarine-past-gamefowl-916.mypinata.cloud/ipfs/bafybeihi27typfofxqqlsbcq5nucomggj6asbfdbk6da64jpmgj5y4bbai';
+        let monsterImageRightLoaded = false;
+        monsterImageRight.onload = () => {
+            monsterImageRightLoaded = true;
+        };
+
+        // Препятствия (монстры)
+        let monsters = [];
+        let hiddenMonsters = []; // Временно скрытые монстры
+        const MONSTER_SIZE = 50; // Немного уменьшен (было 66)
+
+        // Спрайт реактивного ранца
+        const jetpackImage = new Image();
+        jetpackImage.src = 'https://aquamarine-past-gamefowl-916.mypinata.cloud/ipfs/bafybeiegyn7ctgc7rtrvwo36ivhfttxxjsqz75qd6ze2awcwxxer5lzkdi';
+        let jetpackImageLoaded = false;
+        jetpackImage.onload = () => {
+            jetpackImageLoaded = true;
+        };
+
+        // Реактивные ранцы
+        let jetpacks = [];
+        let hiddenJetpacks = []; // Временно скрытые ранцы
+        const JETPACK_SIZE = 40;
+
+        // Пружины
+        let springs = [];
+        const SPRING_SIZE = 25;
+
+        // Физика
+        const GRAVITY = 0.3;
+        const JUMP_POWER = -8;
+        const SPRING_POWER = -15;
+        const JETPACK_POWER = -0.8;
+        const MAX_SPEED = 6;
+        const ACCELERATION = 1.0;
+        const FRICTION = 0.88;
+
+        // Управление
+        let keys = {};
+        let touchLeft = false;
+        let touchRight = false;
+
+        // Загрузка рекорда
+        function loadHighScore() {
+            if (tg?.initDataUnsafe?.user?.id) {
+                const saved = localStorage.getItem(`highScore_${tg.initDataUnsafe.user.id}`);
+                highScore = saved ? parseInt(saved) : 0;
+            } else {
+                highScore = parseInt(localStorage.getItem('highScore') || '0');
+            }
+            highScoreEl.textContent = `Рекорд: ${highScore}`;
+        }
+
+        // Сохранение рекорда
+        function saveHighScore() {
+            if (score > highScore) {
+                highScore = score;
+                if (tg?.initDataUnsafe?.user?.id) {
+                    localStorage.setItem(`highScore_${tg.initDataUnsafe.user.id}`, highScore.toString());
+                } else {
+                    localStorage.setItem('highScore', highScore.toString());
+                }
+                highScoreEl.textContent = `Рекорд: ${highScore}`;
+            }
+        }
+
+        // Инициализация игры
+        function initGame() {
+            gameState = 'playing';
+            score = 0;
+            platforms = [];
+            monsters = [];
+            jetpacks = [];
+            springs = [];
+            hiddenMonsters = [];
+            hiddenJetpacks = [];
+
+            // Стартовая позиция игрока в мировых координатах
+            // Игрок должен быть виден на 70% высоты экрана
+            const startPlayerWorldY = 0;
+            player.x = canvas.width / 2 - player.width / 2;
+            player.y = startPlayerWorldY;
+            player.velocityX = 0;
+            player.velocityY = 0;
+            player.onPlatform = false;
+            highestPlayerY = startPlayerWorldY; // Сбрасываем максимальную высоту
+            player.hasJetpack = false;
+            player.jetpackStartTime = 0;
+            player.immunityEndTime = 0;
+            player.monstersHiddenUntil = 0;
+            player.jetpacksHiddenUntil = 0;
+            hiddenMonsters = [];
+            hiddenJetpacks = [];
+            player.facingRight = false; // Начальное направление
+
+            // Настройка камеры так, чтобы игрок был виден на 70% высоты экрана
+            cameraY = startPlayerWorldY - canvas.height * 0.7;
+
+            // Создание стартовой платформы прямо под игроком
+            platforms.push({
+                x: canvas.width / 2 - PLATFORM_WIDTH / 2,
+                y: startPlayerWorldY + player.height,
+                width: PLATFORM_WIDTH,
+                height: PLATFORM_HEIGHT,
+                type: 'normal',
+                moveDirection: 1,
+                moveSpeed: 2,
+                spriteIndex: 0 // Можно выбрать 0 или 1
+            });
+
+            // Создание начальных платформ выше (уменьшено количество, так как платформы стали больше)
+            for (let i = 1; i < 50; i++) {
+                createPlatform(startPlayerWorldY - i * PLATFORM_SPACING);
+            }
+
+            // Создание начальных препятствий и бонусов (равномерное распределение)
+            let monsterCounter = 0;
+            let jetpackCounter = 0;
+            for (let i = 5; i < 50; i++) {
+                const y = startPlayerWorldY - i * PLATFORM_SPACING;
+                
+                // Монстр каждые 4 платформы (больше монстров)
+                monsterCounter++;
+                if (monsterCounter >= 4) {
+                    createMonster(y);
+                    monsterCounter = 0;
+                }
+                
+                // Ранец каждые 10 платформ
+                jetpackCounter++;
+                if (jetpackCounter >= 10) {
+                    createJetpack(y);
+                    jetpackCounter = 0;
+                }
+                // Пружины скрыты
+            }
+
+            startScreen.classList.add('hidden');
+            const flagImage = document.getElementById('flagImage');
+            const startBtn = document.getElementById('startBtn');
+            if (flagImage) flagImage.style.display = 'none';
+            if (startBtn) startBtn.style.display = 'none';
+            gameOverEl.style.display = 'none';
+            // Показываем счет во время игры
+            scoreEl.style.display = 'block';
+            scoreTextEl.textContent = '0';
+            // Показываем кнопки управления во время игры
+            const controlsEl = document.getElementById('controls');
+            if (controlsEl) controlsEl.style.display = 'flex';
+        }
+
+        // Создание платформы
+        function createPlatform(y) {
+            platforms.push({
+                x: Math.random() * (canvas.width - PLATFORM_WIDTH),
+                y: y,
+                width: PLATFORM_WIDTH,
+                height: PLATFORM_HEIGHT,
+                type: Math.random() < 0.4 ? 'moving' : 'normal', // Увеличено с 0.1 до 0.4 (40% движущихся)
+                moveDirection: Math.random() < 0.5 ? 1 : -1,
+                moveSpeed: 2,
+            });
+        }
+
+        // Создание монстра
+        function createMonster(y) {
+            monsters.push({
+                x: Math.random() * (canvas.width - MONSTER_SIZE),
+                y: y - 40,
+                size: MONSTER_SIZE,
+                moveDirection: Math.random() < 0.5 ? 1 : -1,
+                moveSpeed: 1.5
+            });
+        }
+
+        // Создание реактивного ранца
+        function createJetpack(y) {
+            jetpacks.push({
+                x: Math.random() * (canvas.width - JETPACK_SIZE),
+                y: y - 40,
+                size: JETPACK_SIZE
+            });
+        }
+
+        // Создание пружины
+        function createSpring(y) {
+            springs.push({
+                x: Math.random() * (canvas.width - SPRING_SIZE),
+                y: y - 15,
+                size: SPRING_SIZE
+            });
+        }
+
+        // Обработка управления
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+            
+        });
+
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+
+        // Кнопки управления
+        leftBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            touchLeft = true;
+        });
+        leftBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            touchLeft = false;
+        });
+        leftBtn.addEventListener('mousedown', () => touchLeft = true);
+        leftBtn.addEventListener('mouseup', () => touchLeft = false);
+        leftBtn.addEventListener('mouseleave', () => touchLeft = false);
+
+        rightBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            touchRight = true;
+        });
+        rightBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            touchRight = false;
+        });
+        rightBtn.addEventListener('mousedown', () => touchRight = true);
+        rightBtn.addEventListener('mouseup', () => touchRight = false);
+        rightBtn.addEventListener('mouseleave', () => touchRight = false);
+
+        // Обновление игры
+        function update() {
+            if (gameState !== 'playing') return;
+
+            // Управление
+            let isMoving = false;
+            if (keys['ArrowLeft'] || keys['a'] || keys['A'] || touchLeft) {
+                player.velocityX -= ACCELERATION;
+                player.facingRight = false; // Смотрим влево
+                isMoving = true;
+            }
+            if (keys['ArrowRight'] || keys['d'] || keys['D'] || touchRight) {
+                player.velocityX += ACCELERATION;
+                player.facingRight = true; // Смотрим вправо
+                isMoving = true;
+            }
+
+            // Ограничение скорости
+            player.velocityX = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, player.velocityX));
+            
+            // Трение применяется только когда игрок не двигается
+            if (!isMoving) {
+                player.velocityX *= FRICTION;
+            }
+
+            // Обновление позиции игрока
+            player.x += player.velocityX;
+
+            // Выход за границы экрана (телепортация)
+            if (player.x < -player.width) {
+                player.x = canvas.width;
+            } else if (player.x > canvas.width) {
+                player.x = -player.width;
+            }
+
+            // ПОДБОР РАНЦА ДО ОБНОВЛЕНИЯ ФИЗИКИ (чтобы топливо устанавливалось правильно)
+            // Подбор реактивного ранца
+            for (let jetpack of jetpacks) {
+                if (player.x + player.width > jetpack.x &&
+                    player.x < jetpack.x + jetpack.size &&
+                    player.y + player.height > jetpack.y &&
+                    player.y < jetpack.y + jetpack.size) {
+                    // Реактивный ранец: 2 секунды
+                    // СТРОГО: проверяем, можно ли подобрать ранец
+                    const currentTime = Date.now();
+                    let canPickup = false;
+                    
+                    // СТРОГО: проверяем состояние ранца
+                    if (!player.hasJetpack) {
+                        // Ранец не активен - можно подобрать
+                        canPickup = true;
+                    } else if (player.jetpackStartTime > 0) {
+                        // Ранец активен - проверяем, прошло ли 2 секунды
+                        const elapsed = currentTime - player.jetpackStartTime;
+                        canPickup = (elapsed >= 2000);
+                        console.log('Проверка подбора ранца: elapsed =', elapsed, 'canPickup =', canPickup);
+                    } else {
+                        // hasJetpack = true, но время не установлено - можно подобрать (исправляем состояние)
+                        canPickup = true;
+                    }
+                    
+                    if (canPickup) {
+                        // Устанавливаем ранец
+                        player.hasJetpack = true;
+                        player.jetpackStartTime = currentTime; // Запоминаем время активации
+                        
+                        // СКРЫВАЕМ все монстры и ранцы на время полета + 5 секунд после
+                        const hideUntil = currentTime + 2000 + 5000; // 2 секунды полета + 5 секунд после
+                        player.monstersHiddenUntil = hideUntil;
+                        player.jetpacksHiddenUntil = hideUntil;
+                        
+                        // Перемещаем монстры и ранцы во временное хранилище
+                        hiddenMonsters = [...monsters];
+                        hiddenJetpacks = [...jetpacks];
+                        monsters = [];
+                        jetpacks = [];
+                        
+                        console.log('РАНЕЦ ПОДОБРАН! Монстры и ранцы скрыты до:', hideUntil);
+                        break; // Подобрали ранец, выходим из цикла
+                    } else {
+                        // Ранец уже активен - удаляем объект, чтобы не подобрать его снова
+                        jetpacks = jetpacks.filter(j => j !== jetpack);
+                        break;
+                    }
+                }
+            }
+
+            // Реактивный ранец (2 секунды) - СТРОГАЯ ПРОВЕРКА
+            const updateTime = Date.now();
+            
+            // ВОССТАНАВЛИВАЕМ монстры и ранцы если прошло время скрытия
+            if (updateTime >= player.monstersHiddenUntil && hiddenMonsters.length > 0) {
+                monsters = [...hiddenMonsters];
+                hiddenMonsters = [];
+                player.monstersHiddenUntil = 0;
+            }
+            if (updateTime >= player.jetpacksHiddenUntil && hiddenJetpacks.length > 0) {
+                jetpacks = [...hiddenJetpacks];
+                hiddenJetpacks = [];
+                player.jetpacksHiddenUntil = 0;
+            }
+            
+            // СТРОГО: проверяем и отключаем ранец если нужно
+            if (player.hasJetpack) {
+                    // СТРОГО: если время не установлено - ОТКЛЮЧАЕМ СРАЗУ
+                if (player.jetpackStartTime <= 0) {
+                    console.log('РАНЕЦ ОТКЛЮЧЕН! Время не установлено');
+                    player.hasJetpack = false;
+                    player.jetpackStartTime = 0;
+                    player.velocityY += GRAVITY;
+                } else {
+                    // СТРОГО: вычисляем прошедшее время
+                    const elapsed = updateTime - player.jetpackStartTime;
+                    
+                    // СТРОГО: если прошло >= 2000 мс - ОТКЛЮЧАЕМ
+                    if (elapsed >= 2000) {
+                        console.log('РАНЕЦ ОТКЛЮЧЕН! elapsed:', elapsed);
+                        player.hasJetpack = false;
+                        player.jetpackStartTime = 0;
+                        player.immunityEndTime = updateTime + 5000;
+                        player.velocityY += GRAVITY;
+                    } else {
+                        // Ранец активен - применяем силу
+                        player.velocityY += JETPACK_POWER;
+                    }
+                }
+            } else {
+                // Ранец не активен - гравитация
+                // СТРОГО: сбрасываем время если ранец не активен
+                if (player.jetpackStartTime > 0) {
+                    player.jetpackStartTime = 0;
+                }
+                player.velocityY += GRAVITY;
+            }
+
+            player.y += player.velocityY;
+            player.onPlatform = false;
+
+            // Столкновение с платформами (только с теми, что в видимой области или выше)
+            for (let platform of platforms) {
+                // Движущиеся платформы
+                if (platform.type === 'moving') {
+                    platform.x += platform.moveSpeed * platform.moveDirection;
+                    if (platform.x < 0 || platform.x > canvas.width - platform.width) {
+                        platform.moveDirection *= -1;
+                    }
+                }
+
+                // Проверка столкновения (в мировых координатах)
+                if (player.velocityY > 0 &&
+                    player.x + player.width > platform.x &&
+                    player.x < platform.x + platform.width &&
+                    player.y + player.height > platform.y &&
+                    player.y + player.height < platform.y + platform.height + 10) {
+                    player.y = platform.y - player.height;
+                    player.velocityY = JUMP_POWER;
+                    player.onPlatform = true;
+                }
+            }
+
+            // Пружины скрыты (не обрабатываем столкновения)
+
+            // Столкновение с монстрами
+            for (let monster of monsters) {
+                // Движение монстра
+                monster.x += monster.moveSpeed * monster.moveDirection;
+                if (monster.x < 0 || monster.x > canvas.width - monster.size) {
+                    monster.moveDirection *= -1;
+                }
+
+                // Проверка столкновения (в мировых координатах) - уменьшенная область
+                const collisionPadding = 5; // Отступ для более точного столкновения
+                if (player.x + player.width - collisionPadding > monster.x + collisionPadding &&
+                    player.x + collisionPadding < monster.x + monster.size - collisionPadding &&
+                    player.y + player.height - collisionPadding > monster.y + collisionPadding &&
+                    player.y + collisionPadding < monster.y + monster.size - collisionPadding) {
+                    // Определяем сторону столкновения
+                    const playerCenterX = player.x + player.width / 2;
+                    const playerCenterY = player.y + player.height / 2;
+                    const monsterCenterX = monster.x + monster.size / 2;
+                    const monsterCenterY = monster.y + monster.size / 2;
+                    
+                    const dx = playerCenterX - monsterCenterX;
+                    const dy = playerCenterY - monsterCenterY;
+                    const absDx = Math.abs(dx);
+                    const absDy = Math.abs(dy);
+                    
+                    // Сверху - можно убить с эффектом отскока
+                    if (player.velocityY > 0 && player.y < monster.y + 3) {
+                        // Сильный отскок при убийстве сверху (прыжинка)
+                        player.velocityY = SPRING_POWER; // Используем силу пружины для эффекта отскока
+                        // Иммунитет на 5 секунд после убийства монстра сверху
+                        const currentTime = Date.now();
+                        player.immunityEndTime = currentTime + 5000;
+                        monsters = monsters.filter(m => m !== monster);
+                    }
+                    // Слева или справа - можно убить без отскока
+                    else if (absDx > absDy * 2) {
+                        // Столкновение сбоку (слева или справа) - просто удаляем монстра без изменения скорости
+                        monsters = monsters.filter(m => m !== monster);
+                    }
+                    // Снизу - проигрыш (если нет иммунитета) - увеличенная область (нижняя половина монстра)
+                    else if (player.y + player.height > monster.y + monster.size * 0.5) {
+                        // Игрок столкнулся снизу - проигрыш
+                        // Иммунитет: при полете на ранце или в течение 5 секунд после окончания
+                        const currentTime = Date.now();
+                        
+                        // ПРИНУДИТЕЛЬНАЯ ПРОВЕРКА: проверяем время ранца
+                        let hasActiveJetpack = false;
+                        if (player.hasJetpack && player.jetpackStartTime > 0) {
+                            const elapsedTime = currentTime - player.jetpackStartTime;
+                            if (elapsedTime < 2000) {
+                                hasActiveJetpack = true;
+                            } else {
+                                // ПРИНУДИТЕЛЬНО: если прошло 2 секунды, отключаем ранец
+                                player.hasJetpack = false;
+                                player.jetpackStartTime = 0;
+                            }
+                        }
+                        
+                        const hasImmunity = hasActiveJetpack || (player.immunityEndTime > 0 && currentTime < player.immunityEndTime);
+                        if (!hasImmunity) {
+                            gameOver();
+                            return;
+                        }
+                        // Если есть иммунитет (ранец активен или недавно закончился) - урона нет
+                        // Если ранец активен и есть топливо - урона нет
+                    }
+                }
+            }
+
+            // Обновление камеры (следует за игроком вверх)
+            if (player.y < cameraY + canvas.height * 0.3) {
+                cameraY = player.y - canvas.height * 0.3;
+            }
+            // Камера также следует вниз, если игрок падает
+            if (player.y > cameraY + canvas.height * 0.7) {
+                cameraY = player.y - canvas.height * 0.7;
+            }
+
+            // Обновление счета (основано на высоте подъема)
+            const newScore = Math.max(0, Math.floor((0 - player.y) / 10));
+            if (newScore > score) {
+                score = newScore;
+                scoreTextEl.textContent = score;
+            }
+
+            // Вычисляем высоту игрока для динамической сложности
+            // Чем выше, тем меньше платформ и сложнее
+            // player.y уменьшается при подъеме (отрицательные значения), поэтому инвертируем
+            const playerHeight = Math.max(0, -player.y); // Высота от старта
+            const difficultyLevel = Math.floor(playerHeight / 1000); // Уровень сложности каждые 1000 пикселей
+            
+            // Количество платформ уменьшается с высотой (базовое 12, минимум 5)
+            const platformsToGenerate = Math.max(5, 12 - difficultyLevel);
+            // Расстояние между платформами увеличивается с высотой (базовое 70, максимум 120)
+            const currentSpacing = Math.min(120, 70 + difficultyLevel * 5);
+            
+            // Генерация новых платформ выше игрока
+            if (platforms.length > 0) {
+                const highestPlatform = Math.min(...platforms.map(p => p.y));
+                if (highestPlatform > player.y - 1000) {
+                    for (let i = 1; i <= platformsToGenerate; i++) {
+                        createPlatform(highestPlatform - i * currentSpacing);
+                    }
+                }
+            }
+
+            // Генерация новых препятствий и бонусов выше игрока (независимо от платформ)
+            const allY = [player.y - 500];
+            platforms.forEach(p => allY.push(p.y));
+            if (monsters.length > 0) allY.push(...monsters.map(m => m.y));
+            if (jetpacks.length > 0) allY.push(...jetpacks.map(j => j.y));
+            
+            const highestY = Math.min(...allY);
+            
+            // Проверяем, есть ли иммунитет (ранец активен или недавно закончился)
+            const currentTime = Date.now();
+            let hasActiveJetpack = false;
+            if (player.hasJetpack && player.jetpackStartTime > 0) {
+                const elapsed = currentTime - player.jetpackStartTime;
+                hasActiveJetpack = (elapsed < 2000);
+            }
+            const hasImmunity = hasActiveJetpack || (player.immunityEndTime > 0 && currentTime < player.immunityEndTime);
+            
+            // Если есть иммунитет, генерируем монстров и бустеры выше текущей позиции игрока
+            const minGenerationY = hasImmunity ? player.y - 800 : player.y - 1500;
+            
+            if (highestY > minGenerationY) {
+                // Генерируем монстров и бусты независимо от платформ
+                // Чем выше, тем больше монстров (каждые 3-4 платформы - больше монстров)
+                const monsterInterval = Math.max(3, 5 - Math.floor(difficultyLevel / 2));
+                // Ранцы остаются каждые 10 платформ
+                const jetpackInterval = 10;
+                
+                let monsterCounter = 0;
+                let jetpackCounter = 0;
+                
+                // Генерируем на большей высоте, чтобы не пропадали
+                // Если есть иммунитет, начинаем генерацию выше текущей позиции игрока
+                const startY = hasImmunity ? player.y - 800 : highestY;
+                
+                for (let i = 1; i <= platformsToGenerate + 5; i++) {
+                    const y = startY - i * currentSpacing;
+                    
+                    // Монстр с увеличивающейся частотой на высоте - только если не скрыты
+                    if (currentTime >= player.monstersHiddenUntil) {
+                        monsterCounter++;
+                        if (monsterCounter >= monsterInterval) {
+                            createMonster(y);
+                            monsterCounter = 0;
+                        }
+                    }
+                    
+                    // Ранец каждые 10 платформ (равномерно) - только если не скрыты
+                    if (currentTime >= player.jetpacksHiddenUntil) {
+                        jetpackCounter++;
+                        if (jetpackCounter >= jetpackInterval) {
+                            createJetpack(y);
+                            jetpackCounter = 0;
+                        }
+                    }
+                    // Пружины скрыты
+                }
+            }
+
+            // Удаление объектов за пределами экрана (внизу)
+            platforms = platforms.filter(p => p.y < cameraY + canvas.height + 1000);
+            monsters = monsters.filter(m => m.y < cameraY + canvas.height + 1000);
+            jetpacks = jetpacks.filter(j => j.y < cameraY + canvas.height + 1000);
+            springs = springs.filter(s => s.y < cameraY + canvas.height + 1000);
+
+            // Проигрыш (падение вниз за пределы экрана)
+            const playerScreenY = player.y - cameraY;
+            
+            // Проверяем, есть ли платформы ниже игрока в видимой области
+            let hasPlatformsBelow = false;
+            
+            // Проверяем, есть ли хотя бы одна платформа ниже игрока в видимой области
+            for (let platform of platforms) {
+                const platformScreenY = platform.y - cameraY;
+                // Платформа видна и находится ниже игрока
+                if (platformScreenY > playerScreenY && 
+                    platformScreenY < canvas.height + 50 &&
+                    platformScreenY > -50) {
+                    hasPlatformsBelow = true;
+                    break;
+                }
+            }
+            
+            // Если игрок падает вниз и нет платформ ниже него в видимой области - игра заканчивается
+            if (player.velocityY > 0 && !hasPlatformsBelow && playerScreenY > canvas.height * 0.3) {
+                gameOver();
+                return;
+            }
+            
+            // Дополнительная проверка: если игрок упал ниже нижней границы экрана
+            if (playerScreenY > canvas.height) {
+                gameOver();
+                return;
+            }
+            
+            // Дополнительная проверка: если игрок упал ниже стартовой позиции
+            // (на случай, если камера не успевает следовать или игрок поднялся очень высоко)
+            if (player.y > 200) {
+                gameOver();
+                return;
+            }
+        }
+
+        // Отрисовка
+        function draw() {
+            // Очистка экрана
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Фон (изображение или градиент как fallback) - статичный, не двигается
+            if (backgroundLoaded && backgroundImage.complete) {
+                // Статичный фон - сохраняем пропорции, заполняем весь экран (cover)
+                const bgWidth = backgroundImage.width;
+                const bgHeight = backgroundImage.height;
+                const canvasAspect = canvas.width / canvas.height;
+                const bgAspect = bgWidth / bgHeight;
+                
+                let drawWidth, drawHeight, offsetX = 0, offsetY = 0;
+                
+                if (bgAspect > canvasAspect) {
+                    // Изображение шире - подгоняем по высоте
+                    drawHeight = canvas.height;
+                    drawWidth = bgWidth * (canvas.height / bgHeight);
+                    offsetX = (canvas.width - drawWidth) / 2;
+                } else {
+                    // Изображение выше - подгоняем по ширине
+                    drawWidth = canvas.width;
+                    drawHeight = bgHeight * (canvas.width / bgWidth);
+                    offsetY = (canvas.height - drawHeight) / 2;
+                }
+                
+                ctx.drawImage(backgroundImage, offsetX, offsetY, drawWidth, drawHeight);
+            } else {
+                // Fallback: градиент пока изображение загружается
+                const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                gradient.addColorStop(0, '#87CEEB');
+                gradient.addColorStop(0.5, '#98D8E8');
+                gradient.addColorStop(1, '#B0E0E6');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Облака (декорация) - только если нет фона
+                drawClouds();
+            }
+
+            // Игровые объекты - только если игра началась
+            if (gameState === 'playing') {
+                // Реактивные ранцы (рисуем ПЕРЕД платформами и монстрами, чтобы не залезали на них)
+                for (let jetpack of jetpacks) {
+                    const screenY = jetpack.y - cameraY;
+                    if (screenY > -50 && screenY < canvas.height + 50) {
+                        if (jetpackImageLoaded && jetpackImage.complete) {
+                            // Рисуем изображение ранца с сохранением пропорций
+                            const aspectRatio = jetpackImage.height / jetpackImage.width;
+                            const drawWidth = jetpack.size;
+                            const drawHeight = jetpack.size * aspectRatio;
+                            
+                            // Эффект свечения/сияния
+                            const glowIntensity = 0.6 + 0.4 * Math.sin(Date.now() / 200); // Пульсирующее свечение
+                            
+                            // Рисуем несколько слоев свечения
+                            for (let i = 3; i > 0; i--) {
+                                ctx.globalAlpha = glowIntensity * (i / 3) * 0.3;
+                                ctx.shadowBlur = 15 + i * 5;
+                                ctx.shadowColor = 'rgba(255, 215, 0, 0.8)';
+                                ctx.drawImage(
+                                    jetpackImage, 
+                                    jetpack.x - i * 2, 
+                                    screenY - i * 2, 
+                                    drawWidth + i * 4, 
+                                    drawHeight + i * 4
+                                );
+                            }
+                            
+                            // Основное изображение
+                            ctx.globalAlpha = 1.0;
+                            ctx.shadowBlur = 0;
+                            ctx.drawImage(jetpackImage, jetpack.x, screenY, drawWidth, drawHeight);
+                        } else {
+                            // Fallback: простой прямоугольник пока изображение загружается
+                            ctx.fillStyle = '#FF4444';
+                            ctx.fillRect(jetpack.x, screenY, jetpack.size, jetpack.size * 1.2);
+                            ctx.fillStyle = '#FF8800';
+                            ctx.fillRect(jetpack.x + 5, screenY + 5, jetpack.size - 10, jetpack.size * 1.2 - 10);
+                        }
+                    }
+                }
+
+                // Платформы
+                for (let platform of platforms) {
+                    const screenY = platform.y - cameraY;
+                    if (screenY > -100 && screenY < canvas.height + 100) {
+                        // Используем спрайт с тайлингом, если загружен
+                        const useSprite = platform.type === 'moving' ? 
+                            (movingPlatformImageLoaded && movingPlatformImage.complete && movingPlatformImage.width > 0) : 
+                            (platformImageLoaded && platformImage.complete && platformImage.width > 0 && platformImage.height > 0);
+                        
+                        if (useSprite) {
+                            const sprite = platform.type === 'moving' ? movingPlatformImage : platformImage;
+                            const spriteWidth = sprite.width;
+                            const spriteHeight = sprite.height;
+                            
+                            // Тайлинг текстуры по ширине платформы
+                            const tiles = Math.ceil(platform.width / spriteWidth);
+                            for (let i = 0; i < tiles; i++) {
+                                const x = platform.x + (i * spriteWidth);
+                                const drawWidth = Math.min(spriteWidth, platform.x + platform.width - x);
+                                ctx.drawImage(
+                                    sprite,
+                                    0, 0, spriteWidth, spriteHeight, // источник (полное изображение)
+                                    x, screenY, drawWidth, platform.height // назначение
+                                );
+                            }
+                        } else {
+                            // Fallback: простой прямоугольник пока спрайт загружается
+                            ctx.fillStyle = platform.type === 'moving' ? '#FF6B6B' : '#4CAF50';
+                            ctx.fillRect(platform.x, screenY, platform.width, platform.height);
+                            ctx.strokeStyle = '#2E7D32';
+                            ctx.lineWidth = 2;
+                            ctx.strokeRect(platform.x, screenY, platform.width, platform.height);
+                        }
+                    }
+                }
+
+                // Пружины скрыты (не рисуем)
+
+                // Монстры
+                for (let monster of monsters) {
+                    const screenY = monster.y - cameraY;
+                    if (screenY > -50 && screenY < canvas.height + 50) {
+                        // Выбираем спрайт в зависимости от направления движения
+                        // moveDirection: 1 = вправо, -1 = влево
+                        const currentMonsterImage = monster.moveDirection > 0 ? monsterImageRight : monsterImageLeft;
+                        const currentMonsterImageLoaded = monster.moveDirection > 0 ? monsterImageRightLoaded : monsterImageLeftLoaded;
+                        
+                        if (currentMonsterImageLoaded && currentMonsterImage.complete) {
+                            // Рисуем изображение монстра
+                            ctx.drawImage(currentMonsterImage, monster.x, screenY, monster.size, monster.size);
+                        } else {
+                            // Fallback: простой круг пока изображение загружается
+                            ctx.fillStyle = '#8B4513';
+                            ctx.beginPath();
+                            ctx.arc(monster.x + monster.size / 2, screenY + monster.size / 2, monster.size / 2, 0, Math.PI * 2);
+                            ctx.fill();
+                            // Глаза
+                            ctx.fillStyle = '#FF0000';
+                            ctx.fillRect(monster.x + monster.size / 4, screenY + monster.size / 3, 5, 5);
+                            ctx.fillRect(monster.x + monster.size * 3 / 4 - 5, screenY + monster.size / 3, 5, 5);
+                        }
+                    }
+                }
+
+                // Игрок (преобразование мировых координат в экранные)
+                const playerScreenY = player.y - cameraY;
+                
+                // Голубое сияние вокруг героя при активном ранце
+                const drawTime = Date.now();
+                let hasActiveJetpack = false;
+                if (player.hasJetpack && player.jetpackStartTime > 0) {
+                    const elapsed = drawTime - player.jetpackStartTime;
+                    hasActiveJetpack = (elapsed < 2000);
+                }
+                const hasImmunity = hasActiveJetpack || (player.immunityEndTime > 0 && drawTime < player.immunityEndTime);
+                
+                if (hasActiveJetpack || hasImmunity) {
+                    // Эффект яркого голубого свечения (круглое)
+                    const glowIntensity = 0.8 + 0.2 * Math.sin(Date.now() / 120);
+                    
+                    // Рисуем несколько слоев свечения (круг) - меньший радиус и более прозрачное
+                    for (let i = 4; i > 0; i--) {
+                        ctx.globalAlpha = glowIntensity * (i / 4) * 0.3; // Более прозрачное
+                        ctx.shadowBlur = 15 + i * 5;
+                        ctx.shadowColor = 'rgba(135, 206, 250, 0.8)'; // Более прозрачное свечение
+                        ctx.beginPath();
+                        ctx.arc(
+                            player.x + player.width / 2, 
+                            playerScreenY + player.height / 2, 
+                            (player.width / 2) + i * 5, 
+                            0, 
+                            Math.PI * 2
+                        );
+                        ctx.fillStyle = `rgba(135, 206, 250, ${0.2 + i * 0.05})`;
+                        ctx.fill();
+                    }
+                    
+                    ctx.globalAlpha = 1.0;
+                    ctx.shadowBlur = 0;
+                }
+                
+                // Выбираем спрайт в зависимости от направления (поменяли местами)
+                const currentPlayerImage = player.facingRight ? playerImageLeft : playerImageRight;
+                const currentPlayerImageLoaded = player.facingRight ? playerImageLeftLoaded : playerImageRightLoaded;
+                
+                if (currentPlayerImageLoaded && currentPlayerImage.complete) {
+                    // Мерцание персонажа при активном ранце
+                    if (hasActiveJetpack) {
+                        const flicker = 0.6 + 0.4 * Math.sin(Date.now() / 100); // Быстрое мерцание
+                        ctx.globalAlpha = flicker;
+                    } else {
+                        ctx.globalAlpha = 1.0;
+                    }
+                    
+                    // Рисуем изображение персонажа
+                    ctx.drawImage(currentPlayerImage, player.x, playerScreenY, player.width, player.height);
+                    
+                    ctx.globalAlpha = 1.0; // Возвращаем нормальную прозрачность
+                } else {
+                    // Fallback: простой прямоугольник пока изображение загружается
+                    ctx.fillStyle = '#FFD700';
+                    ctx.fillRect(player.x, playerScreenY, player.width, player.height);
+                    // Лицо игрока
+                    ctx.fillStyle = '#000';
+                    // Глаза
+                    ctx.fillRect(player.x + 10, playerScreenY + 12, 6, 6);
+                    ctx.fillRect(player.x + 24, playerScreenY + 12, 6, 6);
+                    // Рот
+                    ctx.beginPath();
+                    ctx.arc(player.x + player.width / 2, playerScreenY + 30, 8, 0, Math.PI);
+                    ctx.stroke();
+                }
+
+                // Реактивный ранец - СТРОГАЯ ПРОВЕРКА ДЛЯ АНИМАЦИИ
+                const currentTime = Date.now();
+                
+                // СТРОГО: проверяем время и отключаем ранец если нужно
+            }
+            
+        }
+
+        // Рисование облаков
+        function drawClouds() {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            for (let i = 0; i < 5; i++) {
+                const cloudX = (i * 200 + (cameraY * 0.1) % 1000) % (canvas.width + 200) - 100;
+                const cloudY = (i * 150 - cameraY * 0.05) % (canvas.height + 200);
+                drawCloud(cloudX, cloudY);
+            }
+        }
+
+        function drawCloud(x, y) {
+            ctx.beginPath();
+            ctx.arc(x, y, 20, 0, Math.PI * 2);
+            ctx.arc(x + 25, y, 30, 0, Math.PI * 2);
+            ctx.arc(x + 50, y, 20, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Игровой цикл
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Конец игры
+        function gameOver() {
+            gameState = 'gameOver';
+            saveHighScore();
+            finalScoreEl.textContent = score;
+            gameOverEl.style.display = 'block';
+            // Скрываем счет при окончании игры
+            scoreEl.style.display = 'none';
+            // Скрываем кнопки управления при окончании игры
+            const controlsEl = document.getElementById('controls');
+            if (controlsEl) controlsEl.style.display = 'none';
+        }
+
+        // Обработчики кнопок
+        startBtn.addEventListener('click', initGame);
+        gameOverTitle.addEventListener('click', initGame);
+
+        // Загрузка рекорда при старте
+        loadHighScore();
+
+        // Запуск игрового цикла
+        gameLoop();
+    </script>
+</body>
+</html>
