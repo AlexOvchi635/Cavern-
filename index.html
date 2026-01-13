@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Cavern</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -28,10 +31,11 @@
 
         #gameContainer {
             position: relative;
-            width: 100vw;
-            height: 100vh;
-            max-width: 100%;
-            max-height: 100%;
+            width: 100%;
+            height: 100%;
+            max-width: 500px;
+            max-height: 800px;
+            min-height: 600px;
             background: #000;
             overflow: hidden;
         }
@@ -114,18 +118,19 @@
 
         #flagImage {
             position: absolute;
-            top: 12vh;
+            top: 20%;
             left: 50%;
             transform: translateX(-50%);
-            width: min(90vw, 800px);
+            width: 700px;
             height: auto;
+            max-width: 85vw;
             z-index: 20;
             display: block;
         }
 
         #startBtn {
             position: absolute;
-            bottom: 10vh;
+            bottom: 20%;
             left: 50%;
             transform: translateX(-50%);
             margin: 0;
@@ -140,22 +145,17 @@
         
         #startBtn img {
             display: block;
-            width: min(85vw, 600px);
+            width: 500px;
             height: auto;
+            max-width: 80vw;
         }
         
         #heroOnButton {
-            position: absolute;
-            bottom: calc(10vh + min(85vw, 600px) * 0.6);
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 22;
-            pointer-events: none;
-            animation: heroJump 1s ease-in-out infinite;
+            display: none;
         }
         
         #heroOnButton img {
-            width: min(14vw, 100px);
+            width: 80px;
             height: auto;
             display: block;
         }
@@ -305,6 +305,8 @@
             #gameContainer {
                 max-width: 100%;
                 max-height: 100%;
+                width: 100vw;
+                height: 100vh;
             }
             
             #startScreen h1 {
@@ -344,25 +346,27 @@
                 font-size: 18px;
             }
             
+            /* Адаптация для мобильных и Telegram */
             #flagImage {
-                top: 10vh;
-                width: 95vw;
+                top: 12vh;
+                width: 90vw;
+                margin-top: 0;
+                display: block;
             }
             
             #startBtn {
-                bottom: 8vh;
+                bottom: 12vh;
+                top: auto;
+                margin-top: 0;
+                transform: translateX(-50%);
             }
             
             #startBtn img {
-                width: 90vw;
+                width: 85vw;
             }
             
             #heroOnButton {
-                bottom: calc(8vh + 90vw * 0.6);
-            }
-            
-            #heroOnButton img {
-                width: 80px;
+                display: none;
             }
         }
         
@@ -382,11 +386,7 @@
             }
             
             #heroOnButton {
-                bottom: calc(6vh + min(85vw, 550px) * 0.6);
-            }
-            
-            #heroOnButton img {
-                width: min(13vw, 90px);
+                display: none;
             }
         }
     </style>
