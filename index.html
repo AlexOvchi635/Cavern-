@@ -114,20 +114,22 @@
 
         #flagImage {
             position: absolute;
-            top: calc(50% - 320px);
+            top: 50%;
             left: 50%;
-            transform: translateX(-50%);
-            width: 600px;
+            transform: translate(-50%, -50%);
+            width: 700px;
             height: auto;
-            max-width: 80vw;
+            max-width: 85vw;
             z-index: 20;
             display: block;
+            margin-top: -200px;
         }
 
         #startBtn {
             position: absolute;
-            top: calc(50% - 320px + 400px);
+            top: 50%;
             left: 50%;
+            transform: translate(-50%, -50%);
             margin: 0;
             padding: 0;
             background: none;
@@ -136,15 +138,43 @@
             pointer-events: auto;
             display: block;
             z-index: 21;
-            transform: translateX(-50%);
+            margin-top: 150px;
         }
         
         #startBtn img {
             display: block;
-            width: 480px;
+            width: 500px;
             height: auto;
-            max-width: 75vw;
-            animation: pulse 2s ease-in-out infinite;
+            max-width: 80vw;
+        }
+        
+        #heroOnButton {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 22;
+            pointer-events: none;
+            margin-top: 156px;
+            animation: heroJump 1s ease-in-out infinite;
+        }
+        
+        #heroOnButton img {
+            width: 80px;
+            height: auto;
+            display: block;
+        }
+        
+        @keyframes heroJump {
+            0% {
+                transform: translate(-50%, -50%) translateY(0);
+            }
+            50% {
+                transform: translate(-50%, -50%) translateY(-45px);
+            }
+            100% {
+                transform: translate(-50%, -50%) translateY(0);
+            }
         }
         
         @keyframes pulse {
@@ -341,8 +371,11 @@
         </div>
         <img id="flagImage" src="https://aquamarine-past-gamefowl-916.mypinata.cloud/ipfs/bafybeia3jddld5twkyc2732263ghj7vwnbea7axpyhbsaxgaufz7oppism" alt="Флаг">
         <button id="startBtn">
-            <img src="https://aquamarine-past-gamefowl-916.mypinata.cloud/ipfs/bafkreigkl5oogmefhcsuhi572uxa346gznpsyqxlt6vf337cogkuqlvcqq" alt="Начать игру">
+            <img src="https://aquamarine-past-gamefowl-916.mypinata.cloud/ipfs/bafkreifubhfsu2mte54zfod244cz4smwk4yqlnf6lphwtfqatqyeal2wwe" alt="Начать игру">
         </button>
+        <div id="heroOnButton">
+            <img src="https://aquamarine-past-gamefowl-916.mypinata.cloud/ipfs/bafybeie5cezd2vxdqdnqynqstkh5tjmenuruoc3pg2i65hx2gsxenojy7y" alt="Герой">
+        </div>
         <div id="startScreen">
             <h1>Cavern</h1>
             <p>Используйте стрелки или кнопки<br>для управления</p>
@@ -629,8 +662,10 @@
             startScreen.classList.add('hidden');
             const flagImage = document.getElementById('flagImage');
             const startBtn = document.getElementById('startBtn');
+            const heroOnButton = document.getElementById('heroOnButton');
             if (flagImage) flagImage.style.display = 'none';
             if (startBtn) startBtn.style.display = 'none';
+            if (heroOnButton) heroOnButton.style.display = 'none';
             gameOverEl.style.display = 'none';
             // Показываем счет во время игры
             scoreEl.style.display = 'block';
