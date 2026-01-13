@@ -478,9 +478,14 @@
 
         // Платформы
         let platforms = [];
-        const PLATFORM_WIDTH = 120;
-        const PLATFORM_HEIGHT = 30;
+        const PLATFORM_WIDTH = 90; // Уменьшено с 120 до 90
+        const PLATFORM_HEIGHT = 25; // Уменьшено с 30 до 25
         const PLATFORM_SPACING = 70;
+        
+        // Система секторов для разных типов платформ
+        const SECTOR_HEIGHT = 1000; // Высота сектора в пикселях (уменьшено для более частой смены)
+        let currentSector = 0; // Текущий сектор
+        let platformGroups = []; // Группы платформ для группового движения
 
         // Изображения монстров
         const monsterImageLeft = new Image(); // Монстр смотрит влево
@@ -606,18 +611,11 @@
                 createPlatform(startPlayerWorldY - i * PLATFORM_SPACING);
             }
 
-            // Создание начальных препятствий и бонусов (равномерное распределение)
-            let monsterCounter = 0;
+            // Создание начальных бонусов (равномерное распределение)
+            // Враги отключены
             let jetpackCounter = 0;
             for (let i = 5; i < 50; i++) {
                 const y = startPlayerWorldY - i * PLATFORM_SPACING;
-                
-                // Монстр каждые 4 платформы (больше монстров)
-                monsterCounter++;
-                if (monsterCounter >= 4) {
-                    createMonster(y);
-                    monsterCounter = 0;
-                }
                 
                 // Ранец каждые 10 платформ
                 jetpackCounter++;
@@ -642,17 +640,120 @@
             if (controlsEl) controlsEl.style.display = 'flex';
         }
 
+        // Определение типа сектора (какой тип платформ генерировать)
+        function getSectorType(y) {
+            const sectorIndex = Math.floor(Math.abs(y) / SECTOR_HEIGHT);
+            const sectorPattern = sectorIndex % 8; // 8 типов секторов для разнообразия
+            
+            // Начинаем сразу со сложных секторов для интересной игры
+            switch(sectorPattern) {
+                case 0: return 'mixEasy'; // Простой микс: 80% обычных, 20% движущихся
+                case 1: return 'mixMedium'; // Средний микс: 60% обычных, 30% движущихся, 10% fading
+                case 2: return 'oneTouch'; // Сектор с одноразовыми платформами
+                case 3: return 'mixHard'; // Сложный микс: 40% обычных, 30% движущихся, 20% одноразовых, 10% fading
+                case 4: return 'fading'; // Сектор с исчезающими платформами (3 касания)
+                case 5: return 'mixMedium'; // Средний микс
+                case 6: return 'mixHard'; // Сложный микс
+                case 7: return 'oneTouch'; // Сектор с одноразовыми платформами
+                default: return 'mixMedium'; // По умолчанию средний микс
+            }
+        }
+        
         // Создание платформы
-        function createPlatform(y) {
-            platforms.push({
-                x: Math.random() * (canvas.width - PLATFORM_WIDTH),
+        function createPlatform(y, forceType = null) {
+            // Определяем тип платформы на основе сектора
+            const sectorType = forceType || getSectorType(y);
+            let platformType = 'normal';
+            let specialProps = {};
+            
+            // Определяем тип платформы в зависимости от сектора
+            if (sectorType === 'normal') {
+                // Обычный сектор - только обычные платформы
+                platformType = 'normal';
+            } else if (sectorType === 'oneTouch') {
+                // В секторе одноразовых платформ - только они
+                platformType = 'oneTouch';
+                specialProps = {
+                    touched: false,
+                    disappearsImmediately: true
+                };
+            } else if (sectorType === 'fading') {
+                // В секторе исчезающих платформ - только они (3 касания)
+                platformType = 'fading';
+                specialProps = {
+                    maxTouches: 3,
+                    currentTouches: 0,
+                    opacity: 1.0
+                };
+            } else if (sectorType === 'breaking') {
+                // Breaking сектор больше не используется - обычные платформы
+                platformType = 'normal';
+            } else if (sectorType === 'mixEasy') {
+                // Простой микс: 80% обычных, 20% движущихся
+                const rand = Math.random();
+                if (rand < 0.2) {
+                    platformType = 'moving';
+                } else {
+                    platformType = 'normal';
+                }
+            } else if (sectorType === 'mixMedium') {
+                // Средний микс: 60% обычных, 30% движущихся, 10% fading
+                const rand = Math.random();
+                if (rand < 0.3) {
+                    platformType = 'moving';
+                } else if (rand < 0.4) {
+                    platformType = 'fading';
+                    specialProps = {
+                        maxTouches: 3,
+                        currentTouches: 0,
+                        opacity: 1.0
+                    };
+                } else {
+                    platformType = 'normal';
+                }
+            } else if (sectorType === 'mixHard') {
+                // Сложный микс: 40% обычных, 30% движущихся, 20% одноразовых, 10% fading
+                const rand = Math.random();
+                if (rand < 0.3) {
+                    platformType = 'moving';
+                } else if (rand < 0.5) {
+                    platformType = 'oneTouch';
+                    specialProps = {
+                        touched: false,
+                        disappearsImmediately: true
+                    };
+                } else if (rand < 0.6) {
+                    platformType = 'fading';
+                    specialProps = {
+                        maxTouches: 3,
+                        currentTouches: 0,
+                        opacity: 1.0
+                    };
+                } else {
+                    platformType = 'normal';
+                }
+            } else {
+                // Fallback - обычная платформа
+                platformType = 'normal';
+            }
+            
+            // Равномерное распределение платформ по всей ширине экрана
+            // Платформы разбросаны по всем углам и краям карты
+            const platformX = Math.random() * (canvas.width - PLATFORM_WIDTH);
+            
+            const platform = {
+                x: platformX,
                 y: y,
                 width: PLATFORM_WIDTH,
                 height: PLATFORM_HEIGHT,
-                type: Math.random() < 0.4 ? 'moving' : 'normal', // Увеличено с 0.1 до 0.4 (40% движущихся)
+                type: platformType,
                 moveDirection: Math.random() < 0.5 ? 1 : -1,
                 moveSpeed: 2,
-            });
+                ...specialProps
+            };
+            
+            platforms.push(platform);
+            return platform;
         }
 
         // Создание монстра
@@ -857,8 +958,10 @@
             player.y += player.velocityY;
             player.onPlatform = false;
 
-            // Столкновение с платформами (только с теми, что в видимой области или выше)
-            for (let platform of platforms) {
+            // Столкновение с платформами
+            for (let i = platforms.length - 1; i >= 0; i--) {
+                const platform = platforms[i];
+                
                 // Движущиеся платформы
                 if (platform.type === 'moving') {
                     platform.x += platform.moveSpeed * platform.moveDirection;
@@ -873,82 +976,31 @@
                     player.x < platform.x + platform.width &&
                     player.y + player.height > platform.y &&
                     player.y + player.height < platform.y + platform.height + 10) {
+                    
+                    // Обычные платформы и другие типы - дают прыжок
                     player.y = platform.y - player.height;
                     player.velocityY = JUMP_POWER;
                     player.onPlatform = true;
+                    
+                    // Обработка специальных типов платформ
+                    if (platform.type === 'oneTouch') {
+                        // Одноразовая платформа - исчезает СРАЗУ при касании, но дает прыжок
+                        platforms.splice(i, 1);
+                    } else if (platform.type === 'fading') {
+                        // Платформа с ограниченными касаниями
+                        platform.currentTouches = (platform.currentTouches || 0) + 1;
+                        platform.opacity = 1.0 - (platform.currentTouches / platform.maxTouches) * 0.8;
+                        if (platform.currentTouches >= platform.maxTouches) {
+                            platforms.splice(i, 1);
+                        }
+                    }
                 }
             }
 
             // Пружины скрыты (не обрабатываем столкновения)
 
-            // Столкновение с монстрами
-            for (let monster of monsters) {
-                // Движение монстра
-                monster.x += monster.moveSpeed * monster.moveDirection;
-                if (monster.x < 0 || monster.x > canvas.width - monster.size) {
-                    monster.moveDirection *= -1;
-                }
-
-                // Проверка столкновения (в мировых координатах) - уменьшенная область
-                const collisionPadding = 5; // Отступ для более точного столкновения
-                if (player.x + player.width - collisionPadding > monster.x + collisionPadding &&
-                    player.x + collisionPadding < monster.x + monster.size - collisionPadding &&
-                    player.y + player.height - collisionPadding > monster.y + collisionPadding &&
-                    player.y + collisionPadding < monster.y + monster.size - collisionPadding) {
-                    // Определяем сторону столкновения
-                    const playerCenterX = player.x + player.width / 2;
-                    const playerCenterY = player.y + player.height / 2;
-                    const monsterCenterX = monster.x + monster.size / 2;
-                    const monsterCenterY = monster.y + monster.size / 2;
-                    
-                    const dx = playerCenterX - monsterCenterX;
-                    const dy = playerCenterY - monsterCenterY;
-                    const absDx = Math.abs(dx);
-                    const absDy = Math.abs(dy);
-                    
-                    // Сверху - можно убить с эффектом отскока
-                    if (player.velocityY > 0 && player.y < monster.y + 3) {
-                        // Сильный отскок при убийстве сверху (прыжинка)
-                        player.velocityY = SPRING_POWER; // Используем силу пружины для эффекта отскока
-                        // Иммунитет на 5 секунд после убийства монстра сверху
-                        const currentTime = Date.now();
-                        player.immunityEndTime = currentTime + 5000;
-                        monsters = monsters.filter(m => m !== monster);
-                    }
-                    // Слева или справа - можно убить без отскока
-                    else if (absDx > absDy * 2) {
-                        // Столкновение сбоку (слева или справа) - просто удаляем монстра без изменения скорости
-                        monsters = monsters.filter(m => m !== monster);
-                    }
-                    // Снизу - проигрыш (если нет иммунитета) - увеличенная область (нижняя половина монстра)
-                    else if (player.y + player.height > monster.y + monster.size * 0.5) {
-                        // Игрок столкнулся снизу - проигрыш
-                        // Иммунитет: при полете на ранце или в течение 5 секунд после окончания
-                        const currentTime = Date.now();
-                        
-                        // ПРИНУДИТЕЛЬНАЯ ПРОВЕРКА: проверяем время ранца
-                        let hasActiveJetpack = false;
-                        if (player.hasJetpack && player.jetpackStartTime > 0) {
-                            const elapsedTime = currentTime - player.jetpackStartTime;
-                            if (elapsedTime < 2000) {
-                                hasActiveJetpack = true;
-                            } else {
-                                // ПРИНУДИТЕЛЬНО: если прошло 2 секунды, отключаем ранец
-                                player.hasJetpack = false;
-                                player.jetpackStartTime = 0;
-                            }
-                        }
-                        
-                        const hasImmunity = hasActiveJetpack || (player.immunityEndTime > 0 && currentTime < player.immunityEndTime);
-                        if (!hasImmunity) {
-                            gameOver();
-                            return;
-                        }
-                        // Если есть иммунитет (ранец активен или недавно закончился) - урона нет
-                        // Если ранец активен и есть топливо - урона нет
-                    }
-                }
-            }
+            // Столкновение с монстрами - ОТКЛЮЧЕНО
+            // Враги временно удалены из игры
 
             // Обновление камеры (следует за игроком вверх)
             if (player.y < cameraY + canvas.height * 0.3) {
@@ -972,25 +1024,27 @@
             const playerHeight = Math.max(0, -player.y); // Высота от старта
             const difficultyLevel = Math.floor(playerHeight / 1000); // Уровень сложности каждые 1000 пикселей
             
-            // Количество платформ уменьшается с высотой (базовое 12, минимум 5)
-            const platformsToGenerate = Math.max(5, 12 - difficultyLevel);
-            // Расстояние между платформами увеличивается с высотой (базовое 70, максимум 120)
-            const currentSpacing = Math.min(120, 70 + difficultyLevel * 5);
+            // Количество платформ уменьшается с высотой (базовое 35, минимум 18)
+            const platformsToGenerate = Math.max(18, 35 - difficultyLevel);
+            // Расстояние между платформами увеличивается с высотой (базовое 70, максимум 95)
+            const currentSpacing = Math.min(95, 70 + difficultyLevel * 3);
             
             // Генерация новых платформ выше игрока
             if (platforms.length > 0) {
                 const highestPlatform = Math.min(...platforms.map(p => p.y));
                 if (highestPlatform > player.y - 1000) {
+                    // Сначала генерируем все основные платформы
                     for (let i = 1; i <= platformsToGenerate; i++) {
                         createPlatform(highestPlatform - i * currentSpacing);
                     }
+                    
                 }
             }
 
-            // Генерация новых препятствий и бонусов выше игрока (независимо от платформ)
+            // Генерация новых бонусов выше игрока (независимо от платформ)
             const allY = [player.y - 500];
             platforms.forEach(p => allY.push(p.y));
-            if (monsters.length > 0) allY.push(...monsters.map(m => m.y));
+            // if (monsters.length > 0) allY.push(...monsters.map(m => m.y)); // Монстры отключены
             if (jetpacks.length > 0) allY.push(...jetpacks.map(j => j.y));
             
             const highestY = Math.min(...allY);
@@ -1024,14 +1078,7 @@
                 for (let i = 1; i <= platformsToGenerate + 5; i++) {
                     const y = startY - i * currentSpacing;
                     
-                    // Монстр с увеличивающейся частотой на высоте - только если не скрыты
-                    if (currentTime >= player.monstersHiddenUntil) {
-                        monsterCounter++;
-                        if (monsterCounter >= monsterInterval) {
-                            createMonster(y);
-                            monsterCounter = 0;
-                        }
-                    }
+                    // Монстры отключены - генерация временно отключена
                     
                     // Ранец каждые 10 платформ (равномерно) - только если не скрыты
                     if (currentTime >= player.jetpacksHiddenUntil) {
@@ -1047,7 +1094,7 @@
 
             // Удаление объектов за пределами экрана (внизу)
             platforms = platforms.filter(p => p.y < cameraY + canvas.height + 1000);
-            monsters = monsters.filter(m => m.y < cameraY + canvas.height + 1000);
+            // monsters = monsters.filter(m => m.y < cameraY + canvas.height + 1000); // Монстры отключены
             jetpacks = jetpacks.filter(j => j.y < cameraY + canvas.height + 1000);
             springs = springs.filter(s => s.y < cameraY + canvas.height + 1000);
 
@@ -1177,13 +1224,36 @@
                 for (let platform of platforms) {
                     const screenY = platform.y - cameraY;
                     if (screenY > -100 && screenY < canvas.height + 100) {
-                        // Используем спрайт с тайлингом, если загружен
-                        const useSprite = platform.type === 'moving' ? 
-                            (movingPlatformImageLoaded && movingPlatformImage.complete && movingPlatformImage.width > 0) : 
-                            (platformImageLoaded && platformImage.complete && platformImage.width > 0 && platformImage.height > 0);
+                        // Применяем прозрачность для платформ
+                        if (platform.type === 'fading' && platform.opacity !== undefined) {
+                            ctx.globalAlpha = platform.opacity;
+                        } else if (platform.type === 'oneTouch') {
+                            // Одноразовые платформы - полупрозрачные
+                            ctx.globalAlpha = 0.5;
+                        } else {
+                            ctx.globalAlpha = 1.0;
+                        }
                         
-                        if (useSprite) {
-                            const sprite = platform.type === 'moving' ? movingPlatformImage : platformImage;
+                        // Определяем цвет/спрайт в зависимости от типа платформы
+                        let platformColor = '#4CAF50'; // Зеленый - обычная
+                        let useSprite = false;
+                        let sprite = platformImage;
+                        
+                        if (platform.type === 'moving') {
+                            platformColor = '#FF6B6B'; // Красный - движущаяся
+                            useSprite = movingPlatformImageLoaded && movingPlatformImage.complete && movingPlatformImage.width > 0;
+                            sprite = movingPlatformImage;
+                        } else if (platform.type === 'oneTouch') {
+                            platformColor = '#FF4444'; // Ярко-красный - одноразовая
+                            useSprite = platformImageLoaded && platformImage.complete && platformImage.width > 0;
+                        } else if (platform.type === 'fading') {
+                            platformColor = '#8888FF'; // Синий - исчезающая
+                            useSprite = platformImageLoaded && platformImage.complete && platformImage.width > 0;
+                        } else {
+                            useSprite = platformImageLoaded && platformImage.complete && platformImage.width > 0 && platformImage.height > 0;
+                        }
+                        
+                        if (useSprite && sprite) {
                             const spriteWidth = sprite.width;
                             const spriteHeight = sprite.height;
                             
@@ -1199,43 +1269,35 @@
                                 );
                             }
                         } else {
-                            // Fallback: простой прямоугольник пока спрайт загружается
-                            ctx.fillStyle = platform.type === 'moving' ? '#FF6B6B' : '#4CAF50';
+                            // Fallback: цветной прямоугольник пока спрайт загружается
+                            ctx.fillStyle = platformColor;
                             ctx.fillRect(platform.x, screenY, platform.width, platform.height);
                             ctx.strokeStyle = '#2E7D32';
                             ctx.lineWidth = 2;
                             ctx.strokeRect(platform.x, screenY, platform.width, platform.height);
+                            
+                            // Визуальные индикаторы для специальных типов
+                            if (platform.type === 'oneTouch') {
+                                // Красный крестик для одноразовой
+                                ctx.strokeStyle = '#FFFFFF';
+                                ctx.lineWidth = 3;
+                                ctx.beginPath();
+                                ctx.moveTo(platform.x + 10, screenY + 10);
+                                ctx.lineTo(platform.x + platform.width - 10, screenY + platform.height - 10);
+                                ctx.moveTo(platform.x + platform.width - 10, screenY + 10);
+                                ctx.lineTo(platform.x + 10, screenY + platform.height - 10);
+                                ctx.stroke();
+                            }
                         }
+                        
+                        ctx.globalAlpha = 1.0; // Возвращаем нормальную прозрачность
                     }
                 }
 
                 // Пружины скрыты (не рисуем)
 
-                // Монстры
-                for (let monster of monsters) {
-                    const screenY = monster.y - cameraY;
-                    if (screenY > -50 && screenY < canvas.height + 50) {
-                        // Выбираем спрайт в зависимости от направления движения
-                        // moveDirection: 1 = вправо, -1 = влево
-                        const currentMonsterImage = monster.moveDirection > 0 ? monsterImageRight : monsterImageLeft;
-                        const currentMonsterImageLoaded = monster.moveDirection > 0 ? monsterImageRightLoaded : monsterImageLeftLoaded;
-                        
-                        if (currentMonsterImageLoaded && currentMonsterImage.complete) {
-                            // Рисуем изображение монстра
-                            ctx.drawImage(currentMonsterImage, monster.x, screenY, monster.size, monster.size);
-                        } else {
-                            // Fallback: простой круг пока изображение загружается
-                            ctx.fillStyle = '#8B4513';
-                            ctx.beginPath();
-                            ctx.arc(monster.x + monster.size / 2, screenY + monster.size / 2, monster.size / 2, 0, Math.PI * 2);
-                            ctx.fill();
-                            // Глаза
-                            ctx.fillStyle = '#FF0000';
-                            ctx.fillRect(monster.x + monster.size / 4, screenY + monster.size / 3, 5, 5);
-                            ctx.fillRect(monster.x + monster.size * 3 / 4 - 5, screenY + monster.size / 3, 5, 5);
-                        }
-                    }
-                }
+                // Монстры - ОТКЛЮЧЕНЫ
+                // Отрисовка монстров временно отключена
 
                 // Игрок (преобразование мировых координат в экранные)
                 const playerScreenY = player.y - cameraY;
