@@ -152,12 +152,12 @@
         
         #heroOnButton {
             position: absolute;
-            bottom: calc(20% + 200px);
+            bottom: calc(20% + 205px);
             left: 50%;
             transform: translateX(-50%);
             z-index: 22;
             pointer-events: none;
-            animation: heroJump 1.4s ease-in-out infinite;
+            animation: heroJump 1.2s ease-in-out infinite;
         }
         
         #heroOnButton img {
@@ -167,20 +167,11 @@
         }
         
         @keyframes heroJump {
-            0% {
+            0%, 100% {
                 transform: translateX(-50%) translateY(0);
-            }
-            40% {
-                transform: translateX(-50%) translateY(-100px);
             }
             50% {
-                transform: translateX(-50%) translateY(-110px);
-            }
-            60% {
                 transform: translateX(-50%) translateY(-100px);
-            }
-            100% {
-                transform: translateX(-50%) translateY(0);
             }
         }
         
@@ -380,11 +371,11 @@
             }
             
             #heroOnButton {
-                bottom: calc(5vh + 95vw * 0.28);
+                bottom: calc(5vh + 95vw * 0.29);
                 left: 50%;
                 transform: translateX(-50%);
                 display: block;
-                animation: heroJump 1.4s ease-in-out infinite;
+                animation: heroJump 1.2s ease-in-out infinite;
             }
             
             #heroOnButton img {
@@ -410,10 +401,11 @@
             }
             
             #heroOnButton {
-                bottom: calc(4vh + 95vw * 0.28);
+                bottom: calc(4vh + 95vw * 0.29);
                 left: 50%;
                 transform: translateX(-50%);
                 display: block;
+                animation: heroJump 1.2s ease-in-out infinite;
             }
             
             #heroOnButton img {
