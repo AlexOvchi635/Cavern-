@@ -118,12 +118,11 @@
 
         #flagImage {
             position: absolute;
-            top: 10%;
+            top: 5%;
             left: 50%;
-            transform: translateX(-50%) scale(2);
-            width: 700px;
+            transform: translateX(-50%);
+            width: 1400px;
             height: auto;
-            max-width: 45vw;
             z-index: 20;
             display: block;
         }
@@ -152,12 +151,12 @@
         
         #heroOnButton {
             position: absolute;
-            bottom: calc(20% + 210px);
+            bottom: calc(20% + 209px);
             left: 50%;
             transform: translateX(-50%);
             z-index: 22;
             pointer-events: none;
-            animation: heroJump 1.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+            animation: heroJump 1s ease-out infinite;
         }
         
         #heroOnButton img {
@@ -167,11 +166,16 @@
         }
         
         @keyframes heroJump {
-            0%, 100% {
+            0% {
                 transform: translateX(-50%) translateY(0);
+                animation-timing-function: ease-out;
             }
             50% {
-                transform: translateX(-50%) translateY(-100px);
+                transform: translateX(-50%) translateY(-90px);
+                animation-timing-function: ease-in;
+            }
+            100% {
+                transform: translateX(-50%) translateY(0);
             }
         }
         
@@ -351,9 +355,9 @@
             
             /* Адаптация для мобильных и Telegram */
             #flagImage {
-                top: 3vh;
-                transform: translateX(-50%) scale(2);
-                width: 50vw;
+                top: 2vh;
+                transform: translateX(-50%);
+                width: 100vw;
                 max-width: none;
                 margin-top: 0;
                 display: block;
@@ -372,11 +376,11 @@
             }
             
             #heroOnButton {
-                bottom: calc(5vh + 95vw * 0.30);
+                bottom: calc(5vh + 95vw * 0.29);
                 left: 50%;
                 transform: translateX(-50%);
                 display: block;
-                animation: heroJump 1.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+                animation: heroJump 1s ease-out infinite;
             }
             
             #heroOnButton img {
@@ -387,9 +391,9 @@
         /* Специальные стили для Telegram Mini App (маленькие экраны) */
         @media (max-height: 800px) and (max-width: 500px) {
             #flagImage {
-                top: 2vh;
-                transform: translateX(-50%) scale(2);
-                width: 50vw;
+                top: 1vh;
+                transform: translateX(-50%);
+                width: 100vw;
                 max-width: none;
             }
             
@@ -403,11 +407,11 @@
             }
             
             #heroOnButton {
-                bottom: calc(4vh + 95vw * 0.30);
+                bottom: calc(4vh + 95vw * 0.29);
                 left: 50%;
                 transform: translateX(-50%);
                 display: block;
-                animation: heroJump 1.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+                animation: heroJump 1s ease-out infinite;
             }
             
             #heroOnButton img {
