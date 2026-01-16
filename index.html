@@ -120,10 +120,10 @@
             position: absolute;
             top: 10%;
             left: 50%;
-            transform: translateX(-50%);
-            width: 1400px;
+            transform: translateX(-50%) scale(2);
+            width: 700px;
             height: auto;
-            max-width: 90vw;
+            max-width: 45vw;
             z-index: 20;
             display: block;
         }
@@ -152,12 +152,12 @@
         
         #heroOnButton {
             position: absolute;
-            bottom: calc(20% + 205px);
+            bottom: calc(20% + 210px);
             left: 50%;
             transform: translateX(-50%);
             z-index: 22;
             pointer-events: none;
-            animation: heroJump 1.2s ease-in-out infinite;
+            animation: heroJump 1.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
         }
         
         #heroOnButton img {
@@ -352,7 +352,8 @@
             /* Адаптация для мобильных и Telegram */
             #flagImage {
                 top: 3vh;
-                width: 100vw;
+                transform: translateX(-50%) scale(2);
+                width: 50vw;
                 max-width: none;
                 margin-top: 0;
                 display: block;
@@ -371,11 +372,11 @@
             }
             
             #heroOnButton {
-                bottom: calc(5vh + 95vw * 0.29);
+                bottom: calc(5vh + 95vw * 0.30);
                 left: 50%;
                 transform: translateX(-50%);
                 display: block;
-                animation: heroJump 1.2s ease-in-out infinite;
+                animation: heroJump 1.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
             }
             
             #heroOnButton img {
@@ -387,7 +388,8 @@
         @media (max-height: 800px) and (max-width: 500px) {
             #flagImage {
                 top: 2vh;
-                width: 100vw;
+                transform: translateX(-50%) scale(2);
+                width: 50vw;
                 max-width: none;
             }
             
@@ -401,11 +403,11 @@
             }
             
             #heroOnButton {
-                bottom: calc(4vh + 95vw * 0.29);
+                bottom: calc(4vh + 95vw * 0.30);
                 left: 50%;
                 transform: translateX(-50%);
                 display: block;
-                animation: heroJump 1.2s ease-in-out infinite;
+                animation: heroJump 1.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
             }
             
             #heroOnButton img {
