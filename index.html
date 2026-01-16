@@ -151,7 +151,13 @@
         }
         
         #heroOnButton {
-            display: none;
+            position: absolute;
+            bottom: calc(20% + 260px);
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 22;
+            pointer-events: none;
+            animation: heroJump 0.8s ease-in-out infinite;
         }
         
         #heroOnButton img {
@@ -162,13 +168,19 @@
         
         @keyframes heroJump {
             0% {
-                transform: translate(-50%, -50%) translateY(0);
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-80px);
             }
             50% {
-                transform: translate(-50%, -50%) translateY(-45px);
+                transform: translateY(-90px);
+            }
+            60% {
+                transform: translateY(-80px);
             }
             100% {
-                transform: translate(-50%, -50%) translateY(0);
+                transform: translateY(0);
             }
         }
         
@@ -348,45 +360,60 @@
             
             /* Адаптация для мобильных и Telegram */
             #flagImage {
-                top: 10vh;
-                width: 95vw;
+                top: 5vh;
+                width: 100vw;
+                max-width: none;
                 margin-top: 0;
                 display: block;
             }
             
             #startBtn {
-                bottom: 10vh;
+                bottom: 5vh;
                 top: auto;
                 margin-top: 0;
                 transform: translateX(-50%);
             }
             
             #startBtn img {
-                width: 90vw;
+                width: 95vw;
+                max-width: none;
             }
             
             #heroOnButton {
-                display: none;
+                bottom: calc(5vh + 95vw * 0.35);
+                display: block;
+                animation: heroJump 0.8s ease-in-out infinite;
+            }
+            
+            #heroOnButton img {
+                width: 80px;
             }
         }
         
         /* Специальные стили для Telegram Mini App (маленькие экраны) */
-        @media (max-height: 800px) {
+        @media (max-height: 800px) and (max-width: 500px) {
             #flagImage {
-                top: 8vh;
-                width: min(95vw, 800px);
+                top: 4vh;
+                width: 100vw;
+                max-width: none;
             }
             
             #startBtn {
-                bottom: 8vh;
+                bottom: 4vh;
             }
             
             #startBtn img {
-                width: min(90vw, 600px);
+                width: 95vw;
+                max-width: none;
             }
             
             #heroOnButton {
-                display: none;
+                bottom: calc(4vh + 95vw * 0.35);
+                display: block;
+            }
+            
+            #heroOnButton img {
+                width: 70px;
             }
         }
     </style>
@@ -1077,14 +1104,11 @@
             // Столкновение с монстрами - ОТКЛЮЧЕНО
             // Враги временно удалены из игры
 
-            // Обновление камеры (следует за игроком вверх)
+            // Обновление камеры (следует за игроком ТОЛЬКО вверх)
             if (player.y < cameraY + canvas.height * 0.3) {
                 cameraY = player.y - canvas.height * 0.3;
             }
-            // Камера также следует вниз, если игрок падает
-            if (player.y > cameraY + canvas.height * 0.7) {
-                cameraY = player.y - canvas.height * 0.7;
-            }
+            // Камера НЕ следует вниз - чтобы игрок мог упасть и умереть
 
             // Обновление счета (основано на высоте подъема)
             const newScore = Math.max(0, Math.floor((0 - player.y) / 10));
@@ -1176,36 +1200,9 @@
             // Проигрыш (падение вниз за пределы экрана)
             const playerScreenY = player.y - cameraY;
             
-            // Проверяем, есть ли платформы ниже игрока в видимой области
-            let hasPlatformsBelow = false;
-            
-            // Проверяем, есть ли хотя бы одна платформа ниже игрока в видимой области
-            for (let platform of platforms) {
-                const platformScreenY = platform.y - cameraY;
-                // Платформа видна и находится ниже игрока
-                if (platformScreenY > playerScreenY && 
-                    platformScreenY < canvas.height + 50 &&
-                    platformScreenY > -50) {
-                    hasPlatformsBelow = true;
-                    break;
-                }
-            }
-            
-            // Если игрок падает вниз и нет платформ ниже него в видимой области - игра заканчивается
-            if (player.velocityY > 0 && !hasPlatformsBelow && playerScreenY > canvas.height * 0.3) {
-                gameOver();
-                return;
-            }
-            
-            // Дополнительная проверка: если игрок упал ниже нижней границы экрана
-            if (playerScreenY > canvas.height) {
-                gameOver();
-                return;
-            }
-            
-            // Дополнительная проверка: если игрок упал ниже стартовой позиции
-            // (на случай, если камера не успевает следовать или игрок поднялся очень высоко)
-            if (player.y > 200) {
+            // Игрок умирает только когда РЕАЛЬНО вылетел за нижний край экрана
+            // Это дает шанс попасть на платформу, управляя влево-вправо во время падения
+            if (playerScreenY > canvas.height + 50) {
                 gameOver();
                 return;
             }
