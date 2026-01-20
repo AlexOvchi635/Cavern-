@@ -418,6 +418,169 @@
                 width: 70px;
             }
         }
+
+        /* CSS Фонарь */
+        #cssLantern {
+            position: absolute;
+            display: none;
+            pointer-events: none;
+            z-index: 15;
+            transform: scale(0.15) translate(-50%, -50%);
+            transform-origin: top left;
+        }
+
+        .lantern-scene {
+            width: 200px;
+            height: 250px;
+            position: relative;
+        }
+
+        .lantern {
+            --c-lantern-body: hsl(262,38%,20%);
+            --c-lantern-light: hsl(23,98%,75%);
+            --c-lantern-glow: hsl(343,83%,63%);
+
+            display: flex;
+            flex-direction: column;
+            left: calc(50%);
+            position: absolute;
+            transform: translateX(-50%);
+        }
+        .lantern-handle {
+            border: 6px solid hsl(257,41%,27%);
+            border-radius: 50px;
+            height: 105px;
+            width: 200px;
+        }
+        .lantern-inner {
+            animation: lantern-anim 1.2s ease-in-out alternate infinite;
+            margin-top: -5px;
+            transform-origin: top center;
+        }
+        .lantern-chain {
+            height: 60px;
+        }
+        .lantern-chain::before {
+            --c: hsl(260,38%,34%);
+            background-color: var(--c);
+            box-shadow:
+                    0 0 0 5px var(--c),
+                    0 20px 0 var(--c),
+                    0 35px 0 var(--c),
+                    0 50px 0 var(--c);
+            border-radius: 50%;
+            content: '';
+            display: block;
+            height: 10px;
+            margin: 0 auto;
+            width: 10px;
+        }
+
+        .lantern-head::before,
+        .lantern-head::after {
+            background: var(--c-lantern-body);
+            border-radius: 5px;
+            content: '';
+            display: block;
+            height: 15px;
+        }
+        .lantern-head::before {
+            margin: 0 auto;
+            width: 100px;
+        }
+        .lantern-head::after {
+            border-radius: 3px;
+            height: 30px;
+            margin: 3px auto;
+            width: 60px;
+        }
+
+        .lantern-body {
+            perspective: 350px;
+            position: relative;
+        }
+        .lantern-body::before {
+            background-color: var(--c-lantern-light);
+            border: 8px solid var(--c-lantern-body);
+            border-radius: 50px;
+            box-shadow:
+                    inset 0 0 0 5px var(--c-lantern-light),
+                    inset 0 0 0 20px var(--c-lantern-glow);
+            content: '';
+            display: block;
+            height: 195px;
+            margin: 0 auto;
+            perspective: 100px;
+            transform: rotateX(20deg) translateY(-20px);
+            transform-origin: center center;
+            width: 120px;
+        }
+        .lantern-body::after {
+            --c: hsl(321,41%,42%);
+            background-color: var(--c);
+            border-radius: 4px;
+            box-shadow: -5px 161px 0 1px var(--c), 5px 161px 0 1px var(--c);
+            content: '';
+            display: block;
+            height: 7px;
+            margin: -7px auto 0;
+            transform: translateY(-195px);
+            width: 40px;
+        }
+
+        .lantern-spark {
+            animation: lantern-spark-anim linear 2s forwards infinite;
+            background:
+                    radial-gradient(circle at center, var(--c-lantern-light) 60%, transparent 60%),
+                    linear-gradient(to right, transparent 10%, #fff 50%, transparent 50%);
+            border-radius: 50%;
+            clip: rect(0px 30px 30px 0px);
+            height: 60px;
+            left: calc(50% - 30px);
+            position: absolute;
+            top: calc(45% - 30px);
+            transform-origin: center center;
+            width: 60px;
+        }
+        .lantern-spark:nth-child(2) {
+            animation-delay: calc(2s / 3);
+        }
+        .lantern-spark:nth-child(3) {
+            animation-delay: calc((2s / 3) * 2);
+        }
+
+        .lantern-flame {
+            background-color: #fff;
+            border-radius: 50%;
+            height: 30px;
+            left: calc(50% - 15px);
+            position: absolute;
+            top: calc(45% - 15px);
+            width: 30px;
+        }
+
+        .lantern-base {
+            background: var(--c-lantern-body);
+            border-radius: 5px;
+            display: block;
+            height: 15px;
+            margin: -15px auto 0;
+            width: 70px;
+        }
+
+        @keyframes lantern-anim {
+            0% {
+                transform: rotateZ(1deg);
+            }
+            100% {
+                transform: rotateZ(-1deg);
+            }
+        }
+        @keyframes lantern-spark-anim {
+            100% {
+                transform: rotateZ(360deg);
+            }
+        }
     </style>
 </head>
 <body>
@@ -455,8 +618,29 @@
         <div id="finalScoreContainer">
             <img id="finalScoreImage" src="https://aquamarine-past-gamefowl-916.mypinata.cloud/ipfs/bafybeiheenqd6cs75o5bmf7rgxeoat6hojd7d5ncxi57dqz5gs3kenjfxe" alt="Score">
             <span id="finalScore">0</span>
+    </div>
+    </div>
+    
+    <!-- CSS Фонарь -->
+    <div id="cssLantern">
+        <div class="lantern-scene">
+            <div class="lantern">
+                <div class="lantern-handle"></div>
+                <div class="lantern-inner">
+                    <div class="lantern-chain"></div>
+                    <div class="lantern-head"></div>
+                    <div class="lantern-body">
+                        <span class="lantern-spark"></span>
+                        <span class="lantern-spark"></span>
+                        <span class="lantern-spark"></span>
+                        <span class="lantern-flame"></span>
+                    </div>
+                    <div class="lantern-base"></div>
+                </div>
+            </div>
         </div>
     </div>
+    
     </div>
 
     <script>
@@ -575,7 +759,9 @@
             jetpackStartTime: 0, // Время активации ранца (в миллисекундах)
             immunityEndTime: 0, // Время окончания иммунитета (в миллисекундах)
             monstersHiddenUntil: 0, // Время до которого монстры скрыты
-            jetpacksHiddenUntil: 0 // Время до которого ранцы скрыты
+            jetpacksHiddenUntil: 0, // Время до которого ранцы скрыты
+            hasLantern: false, // Есть ли фонарь
+            lightRadius: 0 // Радиус освещения
         };
 
         // Платформы
@@ -625,6 +811,14 @@
         // Пружины
         let springs = [];
         const SPRING_SIZE = 25;
+        
+        // Фонари
+        let lanterns = [];
+        const LANTERN_SIZE = 50;
+        const LANTERN_SPAWN_SCORE = 2000; // Фонарь появляется на 2000 очков
+        let lanternCreated = false; // Флаг: был ли фонарь создан хотя бы раз
+        let lanternY = null; // Y-координата платформы с фонарем (для темноты)
+        const DARKNESS_HEIGHT = 50 * 70; // Высота градиента темноты = 50 платформ * 70px
 
         // Физика
         const GRAVITY = 0.24; // 0.3 * 0.8 (замедлено на 20%)
@@ -672,6 +866,8 @@
             monsters = [];
             jetpacks = [];
             springs = [];
+            lanterns = [];
+            lanternCreated = false; // Сбрасываем флаг создания фонаря
             hiddenMonsters = [];
             hiddenJetpacks = [];
 
@@ -689,6 +885,9 @@
             player.immunityEndTime = 0;
             player.monstersHiddenUntil = 0;
             player.jetpacksHiddenUntil = 0;
+            player.hasLantern = false;
+            player.lightRadius = 0;
+            lanternY = null; // Сбрасываем координату фонаря
             hiddenMonsters = [];
             hiddenJetpacks = [];
             player.facingRight = false; // Начальное направление
@@ -719,9 +918,10 @@
             for (let i = 5; i < 50; i++) {
                 const y = startPlayerWorldY - i * PLATFORM_SPACING;
                 
-                // Ранец каждые 10 платформ
+                // Ранец каждые 10 платформ (только до 800 очков!)
+                const potentialScore = Math.floor((0 - y) / 10);
                 jetpackCounter++;
-                if (jetpackCounter >= 10) {
+                if (jetpackCounter >= 10 && potentialScore < 800) {
                     createJetpack(y);
                     jetpackCounter = 0;
                 }
@@ -742,6 +942,9 @@
             // Показываем кнопки управления во время игры
             const controlsEl = document.getElementById('controls');
             if (controlsEl) controlsEl.style.display = 'flex';
+            // Скрываем CSS фонарь
+            const cssLanternEl = document.getElementById('cssLantern');
+            if (cssLanternEl) cssLanternEl.style.display = 'none';
         }
 
         // Определение типа сектора (какой тип платформ генерировать)
@@ -765,85 +968,113 @@
         
         // Создание платформы
         function createPlatform(y, forceType = null) {
+            // Проверяем, находимся ли мы в темноте (2000-4000 очков)
+            // Y-координата для текущего счета: score = -y / 10
+            const potentialScore = Math.floor((0 - y) / 10);
+            const inDarkness = potentialScore >= 2000 && potentialScore < 4000;
+            const inFirstHalfOfDarkness = potentialScore >= 2000 && potentialScore < 3000;
+            
             // Определяем тип платформы на основе сектора
             const sectorType = forceType || getSectorType(y);
             let platformType = 'normal';
             let specialProps = {};
             
-            // Определяем тип платформы в зависимости от сектора
-            if (sectorType === 'normal') {
-                // Обычный сектор - только обычные платформы
-                platformType = 'normal';
-            } else if (sectorType === 'oneTouch') {
-                // В секторе одноразовых платформ - только они
-                platformType = 'oneTouch';
-                specialProps = {
-                    touched: false,
-                    disappearsImmediately: true
-                };
-            } else if (sectorType === 'fading') {
-                // В секторе исчезающих платформ - только они (3 касания)
-                platformType = 'fading';
-                specialProps = {
-                    maxTouches: 3,
-                    currentTouches: 0,
-                    opacity: 1.0
-                };
-            } else if (sectorType === 'breaking') {
-                // Breaking сектор больше не используется - обычные платформы
-                platformType = 'normal';
-            } else if (sectorType === 'mixEasy') {
-                // Простой микс: 80% обычных, 20% движущихся
-                const rand = Math.random();
-                if (rand < 0.2) {
-                    platformType = 'moving';
+            // В ЛЮБОЙ темноте (2000-4000 очков) упрощаем платформы - БЕЗ одноразовых и исчезающих!
+            if (inDarkness) {
+                // ВО ВСЕЙ темноте - только обычные и движущиеся платформы (без oneTouch и fading)
+                if (sectorType.includes('mix')) {
+                    const rand = Math.random();
+                    if (rand < 0.3) {
+                        platformType = 'moving';
+                    } else {
+                        platformType = 'normal';
+                    }
                 } else {
                     platformType = 'normal';
                 }
-            } else if (sectorType === 'mixMedium') {
-                // Средний микс: 60% обычных, 30% движущихся, 10% fading
-                const rand = Math.random();
-                if (rand < 0.3) {
-                    platformType = 'moving';
-                } else if (rand < 0.4) {
-                    platformType = 'fading';
-                    specialProps = {
-                        maxTouches: 3,
-                        currentTouches: 0,
-                        opacity: 1.0
-                    };
-                } else {
+            } else {
+                // Определяем тип платформы в зависимости от сектора (обычная логика)
+                if (sectorType === 'normal') {
+                    // Обычный сектор - только обычные платформы
                     platformType = 'normal';
-                }
-            } else if (sectorType === 'mixHard') {
-                // Сложный микс: 40% обычных, 30% движущихся, 20% одноразовых, 10% fading
-                const rand = Math.random();
-                if (rand < 0.3) {
-                    platformType = 'moving';
-                } else if (rand < 0.5) {
+                } else if (sectorType === 'oneTouch') {
+                    // В секторе одноразовых платформ - только они
                     platformType = 'oneTouch';
                     specialProps = {
                         touched: false,
                         disappearsImmediately: true
                     };
-                } else if (rand < 0.6) {
+                } else if (sectorType === 'fading') {
+                    // В секторе исчезающих платформ - только они (3 касания)
                     platformType = 'fading';
                     specialProps = {
                         maxTouches: 3,
                         currentTouches: 0,
                         opacity: 1.0
                     };
+                } else if (sectorType === 'breaking') {
+                    // Breaking сектор больше не используется - обычные платформы
+                    platformType = 'normal';
+                } else if (sectorType === 'mixEasy') {
+                    // Простой микс: 80% обычных, 20% движущихся
+                    const rand = Math.random();
+                    if (rand < 0.2) {
+                        platformType = 'moving';
+                    } else {
+                        platformType = 'normal';
+                    }
+                } else if (sectorType === 'mixMedium') {
+                    // Средний микс: 60% обычных, 30% движущихся, 10% fading
+                    const rand = Math.random();
+                    if (rand < 0.3) {
+                        platformType = 'moving';
+                    } else if (rand < 0.4) {
+                        platformType = 'fading';
+                        specialProps = {
+                            maxTouches: 3,
+                            currentTouches: 0,
+                            opacity: 1.0
+                        };
+                    } else {
+                        platformType = 'normal';
+                    }
+                } else if (sectorType === 'mixHard') {
+                    // Сложный микс: 40% обычных, 30% движущихся, 20% одноразовых, 10% fading
+                    const rand = Math.random();
+                    if (rand < 0.3) {
+                        platformType = 'moving';
+                    } else if (rand < 0.5) {
+                        platformType = 'oneTouch';
+                        specialProps = {
+                            touched: false,
+                            disappearsImmediately: true
+                        };
+                    } else if (rand < 0.6) {
+                        platformType = 'fading';
+                        specialProps = {
+                            maxTouches: 3,
+                            currentTouches: 0,
+                            opacity: 1.0
+                        };
+                    } else {
+                        platformType = 'normal';
+                    }
                 } else {
+                    // Fallback - обычная платформа
                     platformType = 'normal';
                 }
-            } else {
-                // Fallback - обычная платформа
-                platformType = 'normal';
             }
             
             // Равномерное распределение платформ по всей ширине экрана
             // Платформы разбросаны по всем углам и краям карты
             const platformX = Math.random() * (canvas.width - PLATFORM_WIDTH);
+            
+            // Не создаем платформы слишком близко к фонарной платформе (Y = -20000)
+            const lanternPlatformY = -20000;
+            const distanceToLantern = Math.abs(y - lanternPlatformY);
+            if (lanternCreated && distanceToLantern < 100) {
+                return null; // Пропускаем эту платформу
+            }
             
             const platform = {
                 x: platformX,
@@ -887,6 +1118,23 @@
                 y: y - 15,
                 size: SPRING_SIZE
             });
+        }
+        
+        // Создание фонаря
+        function createLantern(platformX, platformY, platformWidth) {
+            // Фонарь висит в 4 пикселях над платформой
+            // platformY - это ВЕРХ платформы
+            // НИЗ зоны подбора должен быть на platformY - 4
+            // Значит ВЕРХ зоны подбора (lantern.y) = platformY - 4 - LANTERN_SIZE
+            const lanternWorldY = platformY - 4 - LANTERN_SIZE; // Верх зоны подбора
+            lanterns.push({
+                x: platformX + platformWidth / 2 - LANTERN_SIZE / 2, // По центру платформы
+                y: lanternWorldY, // Верх зоны подбора
+                size: LANTERN_SIZE
+            });
+            // Сохраняем Y-координату фонаря для расчета темноты
+            lanternY = lanternWorldY;
+            console.log('📍 Фонарь создан на Y:', lanternY, 'Платформа на Y:', platformY);
         }
 
         // Обработка управления
@@ -991,7 +1239,7 @@
                         player.jetpackStartTime = currentTime; // Запоминаем время активации
                         
                         // СКРЫВАЕМ все монстры и ранцы на время полета + 5 секунд после
-                        const hideUntil = currentTime + 2000 + 5000; // 2 секунды полета + 5 секунд после
+                        const hideUntil = currentTime + 1500 + 5000; // 1.5 секунды полета + 5 секунд после
                         player.monstersHiddenUntil = hideUntil;
                         player.jetpacksHiddenUntil = hideUntil;
                         
@@ -1038,8 +1286,8 @@
                     // СТРОГО: вычисляем прошедшее время
                     const elapsed = updateTime - player.jetpackStartTime;
                     
-                    // СТРОГО: если прошло >= 2000 мс - ОТКЛЮЧАЕМ
-                    if (elapsed >= 2000) {
+                    // СТРОГО: если прошло >= 1500 мс (1.5 сек) - ОТКЛЮЧАЕМ (хватит на ~1500 очков)
+                    if (elapsed >= 1500) {
                         console.log('РАНЕЦ ОТКЛЮЧЕН! elapsed:', elapsed);
                         player.hasJetpack = false;
                         player.jetpackStartTime = 0;
@@ -1102,6 +1350,21 @@
             }
 
             // Пружины скрыты (не обрабатываем столкновения)
+            
+            // Подбор фонаря
+            for (let i = lanterns.length - 1; i >= 0; i--) {
+                const lantern = lanterns[i];
+                if (player.x + player.width > lantern.x &&
+                    player.x < lantern.x + lantern.size &&
+                    player.y + player.height > lantern.y &&
+                    player.y < lantern.y + lantern.size) {
+                    // Подобрали фонарь!
+                    player.hasLantern = true;
+                    player.lightRadius = 100; // Радиус освещения 100px
+                    lanterns.splice(i, 1);
+                    console.log('🔦 ФОНАРЬ ПОДОБРАН! Радиус света:', player.lightRadius);
+                }
+            }
 
             // Столкновение с монстрами - ОТКЛЮЧЕНО
             // Враги временно удалены из игры
@@ -1117,6 +1380,34 @@
             if (newScore > score) {
                 score = newScore;
                 scoreTextEl.textContent = score;
+                
+                // СОЗДАНИЕ ФОНАРЯ - СТРОГО на 1950 создаём платформу для 2000 очков!
+                if (score >= 1950 && !lanternCreated) {
+                    // Y-координата для 2000 очков: y = -2000 * 10 = -20000
+                    const target2000Y = -20000;
+                    
+                    // УДАЛЯЕМ все платформы рядом (±100px) чтобы не было дублей
+                    platforms = platforms.filter(p => Math.abs(p.y - target2000Y) > 100);
+                    
+                    // СОЗДАЁМ СПЕЦИАЛЬНУЮ ПЛАТФОРМУ НА 2000 ОЧКОВ
+                    const lanternPlatform = {
+                        x: canvas.width / 2 - PLATFORM_WIDTH / 2,
+                        y: target2000Y,
+                        width: PLATFORM_WIDTH,
+                        height: PLATFORM_HEIGHT,
+                        type: 'normal',
+                        moveDirection: 1,
+                        moveSpeed: 0, // Не двигается
+                        spriteIndex: 0
+                    };
+                    platforms.push(lanternPlatform);
+                    
+                    // Ставим фонарь на эту платформу
+                    createLantern(lanternPlatform.x, lanternPlatform.y, lanternPlatform.width);
+                    lanternCreated = true;
+                    lanternY = target2000Y;
+                    console.log('🔦 ПЛАТФОРМА И ФОНАРЬ СОЗДАНЫ НА 2000 ОЧКАХ! Y:', target2000Y);
+                }
             }
 
             // Вычисляем высоту игрока для динамической сложности
@@ -1155,7 +1446,7 @@
             let hasActiveJetpack = false;
             if (player.hasJetpack && player.jetpackStartTime > 0) {
                 const elapsed = currentTime - player.jetpackStartTime;
-                hasActiveJetpack = (elapsed < 2000);
+                hasActiveJetpack = (elapsed < 1500);
             }
             const hasImmunity = hasActiveJetpack || (player.immunityEndTime > 0 && currentTime < player.immunityEndTime);
             
@@ -1181,8 +1472,8 @@
                     
                     // Монстры отключены - генерация временно отключена
                     
-                    // Ранец каждые 10 платформ (равномерно) - только если не скрыты
-                    if (currentTime >= player.jetpacksHiddenUntil) {
+                    // Ранец каждые 10 платформ (равномерно) - ТОЛЬКО ДО 800 ОЧКОВ!
+                    if (score < 800 && currentTime >= player.jetpacksHiddenUntil) {
                         jetpackCounter++;
                         if (jetpackCounter >= jetpackInterval) {
                             createJetpack(y);
@@ -1194,10 +1485,19 @@
             }
 
             // Удаление объектов за пределами экрана (внизу)
-            platforms = platforms.filter(p => p.y < cameraY + canvas.height + 1000);
+            // НО сохраняем фонарную платформу (Y = -20000)
+            const lanternPlatformY = -20000;
+            platforms = platforms.filter(p => {
+                // Сохраняем фонарную платформу если фонарь создан
+                if (lanternCreated && Math.abs(p.y - lanternPlatformY) < 10) {
+                    return true; // Всегда сохраняем фонарную платформу
+                }
+                return p.y < cameraY + canvas.height + 1000; // Обычная логика удаления
+            });
             // monsters = monsters.filter(m => m.y < cameraY + canvas.height + 1000); // Монстры отключены
             jetpacks = jetpacks.filter(j => j.y < cameraY + canvas.height + 1000);
             springs = springs.filter(s => s.y < cameraY + canvas.height + 1000);
+            lanterns = lanterns.filter(l => l.y < cameraY + canvas.height + 1000);
 
             // Проигрыш (падение вниз за пределы экрана)
             const playerScreenY = player.y - cameraY;
@@ -1253,6 +1553,22 @@
 
             // Игровые объекты - только если игра началась
             if (gameState === 'playing') {
+                // CSS фонарь
+                const cssLanternEl = document.getElementById('cssLantern');
+                if (lanterns.length > 0) {
+                    const lantern = lanterns[0];
+                    const screenY = lantern.y - cameraY;
+                    if (screenY > -100 && screenY < canvas.height + 100) {
+                        cssLanternEl.style.display = 'block';
+                        cssLanternEl.style.left = (lantern.x + lantern.size / 2) + 'px';
+                        cssLanternEl.style.top = (screenY + lantern.size / 2 - 20) + 'px';
+                    } else {
+                        cssLanternEl.style.display = 'none';
+                    }
+                } else {
+                    cssLanternEl.style.display = 'none';
+                }
+                
                 // Реактивные ранцы (рисуем ПЕРЕД платформами и монстрами, чтобы не залезали на них)
                 for (let jetpack of jetpacks) {
                     const screenY = jetpack.y - cameraY;
@@ -1381,7 +1697,7 @@
                 let hasActiveJetpack = false;
                 if (player.hasJetpack && player.jetpackStartTime > 0) {
                     const elapsed = drawTime - player.jetpackStartTime;
-                    hasActiveJetpack = (elapsed < 2000);
+                    hasActiveJetpack = (elapsed < 1500);
                 }
                 const hasImmunity = hasActiveJetpack || (player.immunityEndTime > 0 && drawTime < player.immunityEndTime);
                 
@@ -1429,7 +1745,7 @@
                     ctx.globalAlpha = 1.0; // Возвращаем нормальную прозрачность
                 } else {
                     // Fallback: простой прямоугольник пока изображение загружается
-                    ctx.fillStyle = '#FFD700';
+                    ctx.fillStyle = '#4169E1'; // Голубой вместо золотого
                     ctx.fillRect(player.x, playerScreenY, player.width, player.height);
                     // Лицо игрока
                     ctx.fillStyle = '#000';
@@ -1446,6 +1762,204 @@
                 const currentTime = Date.now();
                 
                 // СТРОГО: проверяем время и отключаем ранец если нужно
+                
+                // ===== ЭФФЕКТ ТЕМНОТЫ =====
+                // Темнота появляется ПОСЛЕ подбора фонаря и длится от 2000 до 4000 очков
+                // После 3500 очков начинает светлеть, на 4000 полностью светло
+                if (lanternY !== null && player.hasLantern) {
+                    const darknessStartScreenY = lanternY - cameraY;
+                    
+                    // Вычисляем коэффициент затухания темноты (для рассвета)
+                    let darknessMultiplier = 1.0;
+                    if (score >= 3500 && score < 4000) {
+                        // Постепенное осветление от 3500 до 4000 очков
+                        darknessMultiplier = 1.0 - ((score - 3500) / 500); // От 1.0 до 0.0
+                    } else if (score >= 4000) {
+                        // На 4000+ очков - полностью светло, фонарь исчезает
+                        player.hasLantern = false;
+                        player.lightRadius = 0;
+                        darknessMultiplier = 0;
+                    }
+                    
+                    // Если фонарь выше экрана - темнота на весь экран
+                    if (darknessStartScreenY < 0 && darknessMultiplier > 0) {
+                        const distanceAbove = cameraY - lanternY;
+                        const darknessProgress = Math.min(1, distanceAbove / DARKNESS_HEIGHT);
+                        const darknessAlpha = darknessProgress * 0.95 * darknessMultiplier;
+                        
+                        // НОВЫЙ ПОДХОД: Рисуем темноту везде, потом ВЫРЕЗАЕМ круг используя destination-out
+                        if (player.hasLantern && player.lightRadius > 0) {
+                            const playerCenterX = player.x + player.width / 2;
+                            const playerCenterY = playerScreenY + player.height / 2;
+                            
+                            // ШАГ 1: Рисуем темноту везде
+                            ctx.fillStyle = `rgba(0, 0, 0, ${darknessAlpha})`;
+                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                            
+                            // ШАГ 2: ВЫРЕЗАЕМ круг из темноты используя destination-out
+                            ctx.save();
+                            ctx.globalCompositeOperation = 'destination-out';
+                            ctx.beginPath();
+                            ctx.arc(playerCenterX, playerCenterY, player.lightRadius, 0, Math.PI * 2);
+                            ctx.fill();
+                            ctx.restore();
+                            
+                            // ШАГ 3: Восстанавливаем нормальную композитную операцию
+                            ctx.globalCompositeOperation = 'source-over';
+                        } else {
+                            // Без фонаря - обычная темнота
+                            ctx.fillStyle = `rgba(0, 0, 0, ${darknessAlpha})`;
+                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        }
+                    } else if (darknessMultiplier > 0) {
+                        // Фонарь виден - градиент от верха до фонаря
+                        const gradient = ctx.createLinearGradient(0, 0, 0, darknessStartScreenY);
+                        const topWorldY = cameraY;
+                        const distanceAboveTop = lanternY - topWorldY;
+                        const topDarknessProgress = Math.min(1, distanceAboveTop / DARKNESS_HEIGHT);
+                        const topDarknessAlpha = topDarknessProgress * 0.95 * darknessMultiplier;
+                        
+                        gradient.addColorStop(0, `rgba(0, 0, 0, ${topDarknessAlpha})`);
+                        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                        
+                        ctx.fillStyle = gradient;
+                        ctx.fillRect(0, 0, canvas.width, darknessStartScreenY);
+                    }
+                }
+                
+                // ПЕРЕРИСОВЫВАЕМ ЭЛЕМЕНТЫ ВНУТРИ КРУГА ПОСЛЕ ТЕМНОТЫ (чтобы они были светлыми)
+                if (lanternY !== null && player.hasLantern && player.lightRadius > 0) {
+                    const playerCenterX = player.x + player.width / 2;
+                    const playerCenterY = playerScreenY + player.height / 2;
+                    
+                    ctx.save();
+                    // Clip только для области внутри круга
+                    ctx.beginPath();
+                    ctx.arc(playerCenterX, playerCenterY, player.lightRadius, 0, Math.PI * 2);
+                    ctx.clip();
+                    
+                    // Перерисовываем фон внутри круга
+                    if (backgroundLoaded && backgroundImage.complete) {
+                        const bgWidth = backgroundImage.width;
+                        const bgHeight = backgroundImage.height;
+                        const canvasAspect = canvas.width / canvas.height;
+                        const bgAspect = bgWidth / bgHeight;
+                        
+                        let drawWidth, drawHeight, offsetX = 0, offsetY = 0;
+                        
+                        if (bgAspect > canvasAspect) {
+                            drawHeight = canvas.height;
+                            drawWidth = bgWidth * (canvas.height / bgHeight);
+                            offsetX = (canvas.width - drawWidth) / 2;
+                        } else {
+                            drawWidth = canvas.width;
+                            drawHeight = bgHeight * (canvas.width / bgWidth);
+                            offsetY = (canvas.height - drawHeight) / 2;
+                        }
+                        
+                        ctx.drawImage(backgroundImage, offsetX, offsetY, drawWidth, drawHeight);
+                    }
+                    
+                    // Перерисовываем платформы внутри круга
+                    for (let platform of platforms) {
+                        const platformScreenY = platform.y - cameraY;
+                        if (platformScreenY > -100 && platformScreenY < canvas.height + 100) {
+                            if (platform.type === 'fading' && platform.opacity !== undefined) {
+                                ctx.globalAlpha = platform.opacity;
+                            } else if (platform.type === 'oneTouch') {
+                                ctx.globalAlpha = 0.5;
+                            } else {
+                                ctx.globalAlpha = 1.0;
+                            }
+                            
+                            let useSprite = false;
+                            let sprite = platformImage;
+                            
+                            if (platform.type === 'moving') {
+                                useSprite = movingPlatformImageLoaded && movingPlatformImage.complete && movingPlatformImage.width > 0;
+                                sprite = movingPlatformImage;
+                            } else {
+                                useSprite = platformImageLoaded && platformImage.complete && platformImage.width > 0 && platformImage.height > 0;
+                            }
+                            
+                            if (useSprite && sprite) {
+                                const spriteWidth = sprite.width;
+                                const spriteHeight = sprite.height;
+                                const tiles = Math.ceil(platform.width / spriteWidth);
+                                for (let i = 0; i < tiles; i++) {
+                                    const x = platform.x + (i * spriteWidth);
+                                    const drawWidth = Math.min(spriteWidth, platform.x + platform.width - x);
+                                    ctx.drawImage(sprite, 0, 0, spriteWidth, spriteHeight, x, platformScreenY, drawWidth, platform.height);
+                                }
+                            } else {
+                                ctx.fillStyle = '#4CAF50';
+                                ctx.fillRect(platform.x, platformScreenY, platform.width, platform.height);
+                            }
+                            
+                            ctx.globalAlpha = 1.0;
+                        }
+                    }
+                    
+                    // Перерисовываем персонажа внутри круга
+                    const currentPlayerImage = player.facingRight ? playerImageLeft : playerImageRight;
+                    const currentPlayerImageLoaded = player.facingRight ? playerImageLeftLoaded : playerImageRightLoaded;
+                    
+                    if (currentPlayerImageLoaded && currentPlayerImage.complete) {
+                        ctx.globalAlpha = 1.0;
+                        ctx.drawImage(currentPlayerImage, player.x, playerScreenY, player.width, player.height);
+                    } else {
+                        ctx.fillStyle = '#4169E1';
+                        ctx.fillRect(player.x, playerScreenY, player.width, player.height);
+                    }
+                    
+                    ctx.restore();
+                }
+            }
+            
+            // КОНТУР КРУГА СВЕТА - ВСЕГДА ВИДЕН ЕСЛИ ЕСТЬ ФОНАРЬ
+            if (player.hasLantern && player.lightRadius > 0) {
+                const playerScreenY2 = player.y - cameraY;
+                const playerCenterX = player.x + player.width / 2;
+                const playerCenterY = playerScreenY2 + player.height / 2;
+                
+                // СВЕТЯЩИЙСЯ ГОЛУБОЙ КОНТУР
+                ctx.save();
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = 'rgba(135, 206, 250, 1)';
+                ctx.strokeStyle = 'rgba(135, 206, 250, 0.8)';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(playerCenterX, playerCenterY, player.lightRadius, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+                
+                // ГРАДИЕНТ МЕЖДУ ДЕЛЕНИЯМИ 9-10 ПО КРУГУ
+                ctx.save();
+                const radius9 = (player.lightRadius / 10) * 9;
+                const radius10 = player.lightRadius;
+                
+                // Создаем радиальный градиент от 9 до 10 деления
+                const gradient = ctx.createRadialGradient(
+                    playerCenterX, playerCenterY, radius9,
+                    playerCenterX, playerCenterY, radius10
+                );
+                gradient.addColorStop(0, 'rgba(135, 206, 250, 0)'); // Прозрачный на делении 9
+                gradient.addColorStop(1, 'rgba(135, 206, 250, 0.6)'); // Яркий голубой на делении 10
+                
+                // Рисуем большой круг с градиентом
+                ctx.beginPath();
+                ctx.arc(playerCenterX, playerCenterY, radius10, 0, Math.PI * 2);
+                ctx.fillStyle = gradient;
+                ctx.fill();
+                
+                // Вырезаем внутренний круг (деление 9)
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.beginPath();
+                ctx.arc(playerCenterX, playerCenterY, radius9, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.restore();
+                
             }
             
         }
@@ -1486,6 +2000,9 @@
             // Скрываем кнопки управления при окончании игры
             const controlsEl = document.getElementById('controls');
             if (controlsEl) controlsEl.style.display = 'none';
+            // Скрываем CSS фонарь
+            const cssLanternEl = document.getElementById('cssLantern');
+            if (cssLanternEl) cssLanternEl.style.display = 'none';
         }
 
         // Обработчики кнопок
