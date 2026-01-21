@@ -63,6 +63,7 @@
             right: 10px;
             z-index: 15;
             display: none;
+            transition: transform 0.5s ease-in-out; /* Плавный переворот */
         }
 
         #scoreImage {
@@ -757,11 +758,15 @@
             onPlatform: false,
             hasJetpack: false,
             jetpackStartTime: 0, // Время активации ранца (в миллисекундах)
+            jetpackDuration: 1500, // Длительность полета (мс), по умолчанию 1500
             immunityEndTime: 0, // Время окончания иммунитета (в миллисекундах)
             monstersHiddenUntil: 0, // Время до которого монстры скрыты
             jetpacksHiddenUntil: 0, // Время до которого ранцы скрыты
             hasLantern: false, // Есть ли фонарь
-            lightRadius: 0 // Радиус освещения
+            lightRadius: 0, // Радиус освещения
+            isInverted: false, // Перевернут ли игрок (висит на потолке платформ)
+            isFlipping: false, // Идет ли анимация переворота
+            flipStartTime: 0 // Время начала переворота
         };
 
         // Платформы
@@ -811,6 +816,13 @@
         // Пружины
         let springs = [];
         const SPRING_SIZE = 25;
+        
+        // Инвертирующие пружины (для переворота мира)
+        let invertSprings = [];
+        const INVERT_SPRING_SIZE = 40;
+        let invertSpring1Created = false; // Пружина на 3500 (переворот)
+        let invertSpring2Created = false; // Пружина на 4000 (возврат)
+        const FLIP_DURATION = 500; // Длительность анимации переворота (мс)
         
         // Фонари
         let lanterns = [];
@@ -868,6 +880,9 @@
             springs = [];
             lanterns = [];
             lanternCreated = false; // Сбрасываем флаг создания фонаря
+            invertSprings = [];
+            invertSpring1Created = false;
+            invertSpring2Created = false;
             hiddenMonsters = [];
             hiddenJetpacks = [];
 
@@ -882,11 +897,15 @@
             highestPlayerY = startPlayerWorldY; // Сбрасываем максимальную высоту
             player.hasJetpack = false;
             player.jetpackStartTime = 0;
+            player.jetpackDuration = 1500;
             player.immunityEndTime = 0;
             player.monstersHiddenUntil = 0;
             player.jetpacksHiddenUntil = 0;
             player.hasLantern = false;
             player.lightRadius = 0;
+            player.isInverted = false;
+            player.isFlipping = false;
+            player.flipStartTime = 0;
             lanternY = null; // Сбрасываем координату фонаря
             hiddenMonsters = [];
             hiddenJetpacks = [];
@@ -968,18 +987,18 @@
         
         // Создание платформы
         function createPlatform(y, forceType = null) {
-            // Проверяем, находимся ли мы в темноте (2000-4000 очков)
+            // Проверяем, находимся ли мы в темноте (2000-3000 очков)
             // Y-координата для текущего счета: score = -y / 10
             const potentialScore = Math.floor((0 - y) / 10);
-            const inDarkness = potentialScore >= 2000 && potentialScore < 4000;
-            const inFirstHalfOfDarkness = potentialScore >= 2000 && potentialScore < 3000;
+            const inDarkness = potentialScore >= 2000 && potentialScore < 3000;
+            const inFirstHalfOfDarkness = potentialScore >= 2000 && potentialScore < 2500;
             
             // Определяем тип платформы на основе сектора
             const sectorType = forceType || getSectorType(y);
             let platformType = 'normal';
             let specialProps = {};
             
-            // В ЛЮБОЙ темноте (2000-4000 очков) упрощаем платформы - БЕЗ одноразовых и исчезающих!
+            // В ЛЮБОЙ темноте (2000-3000 очков) упрощаем платформы - БЕЗ одноразовых и исчезающих!
             if (inDarkness) {
                 // ВО ВСЕЙ темноте - только обычные и движущиеся платформы (без oneTouch и fading)
                 if (sectorType.includes('mix')) {
@@ -1120,6 +1139,28 @@
             });
         }
         
+        // Создание инвертирующей пружины
+        function createInvertSpring(platformX, platformY, platformWidth, platformHeight, invertTo) {
+            // Первая пружина (переворот) - сверху платформы (не касается)
+            // Вторая пружина (возврат) - снизу платформы (не касается, удобно в инвертированном режиме)
+            let springWorldY;
+            if (invertTo) {
+                // Переворот - СВЕРХУ, с отступом 2px от платформы
+                springWorldY = platformY - INVERT_SPRING_SIZE - 2;
+            } else {
+                // Возврат - СНИЗУ, с отступом 2px от платформы
+                springWorldY = platformY + platformHeight + 2;
+            }
+            
+            invertSprings.push({
+                x: platformX + platformWidth / 2 - INVERT_SPRING_SIZE / 2, // По центру платформы
+                y: springWorldY,
+                size: INVERT_SPRING_SIZE,
+                invertTo: invertTo // true = переворот, false = возврат
+            });
+            console.log('🌀 Инвертирующая пружина создана на Y:', springWorldY, 'invertTo:', invertTo, 'позиция:', invertTo ? 'СВЕРХУ↑' : 'СНИЗУ↓');
+        }
+        
         // Создание фонаря
         function createLantern(platformX, platformY, platformWidth) {
             // Фонарь висит в 4 пикселях над платформой
@@ -1237,9 +1278,10 @@
                         // Устанавливаем ранец
                         player.hasJetpack = true;
                         player.jetpackStartTime = currentTime; // Запоминаем время активации
+                        player.jetpackDuration = 1500; // Обычная длительность
                         
                         // СКРЫВАЕМ все монстры и ранцы на время полета + 5 секунд после
-                        const hideUntil = currentTime + 1500 + 5000; // 1.5 секунды полета + 5 секунд после
+                        const hideUntil = currentTime + player.jetpackDuration + 5000;
                         player.monstersHiddenUntil = hideUntil;
                         player.jetpacksHiddenUntil = hideUntil;
                         
@@ -1274,6 +1316,12 @@
                 player.jetpacksHiddenUntil = 0;
             }
             
+            // Динамическая физика в зависимости от режима (обычный / инвертированный)
+            const currentGravity = player.isInverted ? -GRAVITY : GRAVITY;
+            const currentJumpPower = player.isInverted ? -JUMP_POWER : JUMP_POWER;
+            const currentJetpackPower = player.isInverted ? -JETPACK_POWER : JETPACK_POWER;
+            
+            // Реактивный ранец (2 секунды) - СТРОГАЯ ПРОВЕРКА
             // СТРОГО: проверяем и отключаем ранец если нужно
             if (player.hasJetpack) {
                     // СТРОГО: если время не установлено - ОТКЛЮЧАЕМ СРАЗУ
@@ -1281,7 +1329,7 @@
                     console.log('РАНЕЦ ОТКЛЮЧЕН! Время не установлено');
                     player.hasJetpack = false;
                     player.jetpackStartTime = 0;
-                    player.velocityY += GRAVITY;
+                    player.velocityY += currentGravity;
                 } else {
                     // СТРОГО: вычисляем прошедшее время
                     const elapsed = updateTime - player.jetpackStartTime;
@@ -1292,10 +1340,10 @@
                         player.hasJetpack = false;
                         player.jetpackStartTime = 0;
                         player.immunityEndTime = updateTime + 5000;
-                        player.velocityY += GRAVITY;
+                        player.velocityY += currentGravity;
                     } else {
                         // Ранец активен - применяем силу
-                        player.velocityY += JETPACK_POWER;
+                        player.velocityY += currentJetpackPower;
                     }
                 }
             } else {
@@ -1304,7 +1352,7 @@
                 if (player.jetpackStartTime > 0) {
                     player.jetpackStartTime = 0;
                 }
-                player.velocityY += GRAVITY;
+                player.velocityY += currentGravity;
             }
 
             player.y += player.velocityY;
@@ -1323,18 +1371,38 @@
                 }
 
                 // Проверка столкновения (в мировых координатах)
-                if (player.velocityY > 0 &&
-                    player.x + player.width > platform.x &&
-                    player.x < platform.x + platform.width &&
-                    player.y + player.height > platform.y &&
-                    player.y + player.height < platform.y + platform.height + 10) {
-                    
-                    // Обычные платформы и другие типы - дают прыжок
-                    player.y = platform.y - player.height;
-                    player.velocityY = JUMP_POWER;
-                    player.onPlatform = true;
-                    
-                    // Обработка специальных типов платформ
+                let collision = false;
+                
+                if (!player.isInverted) {
+                    // ОБЫЧНЫЙ РЕЖИМ: столкновение с ВЕРХОМ платформы
+                    if (player.velocityY > 0 &&
+                        player.x + player.width > platform.x &&
+                        player.x < platform.x + platform.width &&
+                        player.y + player.height > platform.y &&
+                        player.y + player.height < platform.y + platform.height + 10) {
+                        
+                        player.y = platform.y - player.height;
+                        player.velocityY = currentJumpPower;
+                        player.onPlatform = true;
+                        collision = true;
+                    }
+                } else {
+                    // ИНВЕРТИРОВАННЫЙ РЕЖИМ: столкновение с НИЗОМ платформы
+                    if (player.velocityY < 0 && // Игрок двигается вверх (падает "вверх")
+                        player.x + player.width > platform.x &&
+                        player.x < platform.x + platform.width &&
+                        player.y < platform.y + platform.height + 10 && // Проверка всей высоты платформы
+                        player.y > platform.y - player.height) { // Верх игрока выше верха платформы
+                        
+                        player.y = platform.y + platform.height; // Прилипаем к низу
+                        player.velocityY = currentJumpPower; // Прыгаем "вниз" от низа
+                        player.onPlatform = true;
+                        collision = true;
+                    }
+                }
+                
+                // Обработка специальных типов платформ (только если было столкновение)
+                if (collision) {
                     if (platform.type === 'oneTouch') {
                         // Одноразовая платформа - исчезает СРАЗУ при касании, но дает прыжок
                         platforms.splice(i, 1);
@@ -1363,6 +1431,77 @@
                     player.lightRadius = 100; // Радиус освещения 100px
                     lanterns.splice(i, 1);
                     console.log('🔦 ФОНАРЬ ПОДОБРАН! Радиус света:', player.lightRadius);
+                }
+            }
+            
+            // Подбор инвертирующей пружины (портала) - только на платформе
+            for (let i = invertSprings.length - 1; i >= 0; i--) {
+                const spring = invertSprings[i];
+                
+                // Для второй сферы (возврат) расширяем зону подбора и проверяем, что игрок на платформе рядом
+                const isReturnSpring = !spring.invertTo; // false = возврат
+                let canPickup = false;
+                
+                if (isReturnSpring) {
+                    // ВТОРАЯ СФЕРА (возврат): находится СНИЗУ платформы, игрок висит НАД ней
+                    // Расширенная зона подбора по горизонтали (в 2.5 раза шире)
+                    const pickupZoneWidth = spring.size * 2.5;
+                    const pickupZoneX = spring.x - (pickupZoneWidth - spring.size) / 2;
+                    
+                    // Проверяем горизонтальное пересечение (расширенная зона)
+                    const horizontalOverlap = player.x + player.width > pickupZoneX &&
+                                             player.x < pickupZoneX + pickupZoneWidth;
+                    
+                    // Расширенная зона подбора по вертикали ВВЕРХ (игрок выше сферы, висит на потолке)
+                    // Сфера находится на spring.y, игрок может быть до 200px выше
+                    const springTop = spring.y;
+                    const springBottom = spring.y + spring.size;
+                    const playerBottom = player.y + player.height; // Ноги игрока (висят на потолке)
+                    
+                    // Игрок должен быть в зоне: от сферы до 200px выше
+                    const verticalInRange = playerBottom >= springTop - 200 && 
+                                           playerBottom <= springBottom + 50;
+                    
+                    // Проверяем, что игрок стоит на платформе И находится в зоне подбора
+                    canPickup = player.onPlatform && 
+                               horizontalOverlap && 
+                               verticalInRange;
+                } else {
+                    // ПЕРВАЯ СФЕРА (переворот): простая проверка как в тест123.html
+                    const touchesSpring = player.x + player.width > spring.x &&
+                                         player.x < spring.x + spring.size &&
+                                         player.y + player.height > spring.y &&
+                                         player.y < spring.y + spring.size;
+                    canPickup = touchesSpring && player.onPlatform;
+                }
+                
+                if (canPickup) {
+                    // Если это первая сфера (переворот) - удаляем все платформы ниже неё
+                    if (spring.invertTo) {
+                        // Удаляем все платформы, которые находятся ниже (y > spring.y, так как y отрицательный при подъеме)
+                        // Например: сфера на y = -50000, платформы на y = -10000 (больше) находятся ниже
+                        // Но сохраняем платформу с порталом (isSpring1Platform)
+                        const springY = spring.y;
+                        platforms = platforms.filter(p => {
+                            // Сохраняем платформу с порталом
+                            if (p.isSpring1Platform) {
+                                return true;
+                            }
+                            // Удаляем все платформы ниже сферы (y > spring.y, т.е. менее отрицательные значения)
+                            // Например: сфера на y = -50000, удаляем платформы на y = -10000 (больше, ниже)
+                            // В filter() возвращаем true для платформ, которые ОСТАВЛЯЕМ
+                            return p.y <= springY;
+                        });
+                        console.log('🗑️ УДАЛЕНЫ ВСЕ ПЛАТФОРМЫ НИЖЕ ПЕРВОЙ СФЕРЫ! Y портала:', springY);
+                    }
+                    
+                    // Начинаем переворот
+                    player.isFlipping = true;
+                    player.flipStartTime = Date.now();
+                    player.isInverted = spring.invertTo;
+                    player.velocityY = -15;
+                    invertSprings.splice(i, 1);
+                    console.log('🌀 ПОРТАЛ АКТИВИРОВАН! Переворот в режим:', player.isInverted);
                 }
             }
 
@@ -1408,6 +1547,60 @@
                     lanternY = target2000Y;
                     console.log('🔦 ПЛАТФОРМА И ФОНАРЬ СОЗДАНЫ НА 2000 ОЧКАХ! Y:', target2000Y);
                 }
+                
+                // СОЗДАНИЕ ПОРТАЛА #1 (ПЕРЕВОРОТ) - на 3450 создаём платформу для 3500 очков!
+                if (score >= 3450 && !invertSpring1Created) {
+                    // Y-координата для 3500 очков: y = -3500 * 10 = -35000
+                    const target3500Y = -35000;
+                    
+                    // УДАЛЯЕМ все платформы рядом (±100px) чтобы не было дублей
+                    platforms = platforms.filter(p => Math.abs(p.y - target3500Y) > 100);
+                    
+                    // СОЗДАЁМ СПЕЦИАЛЬНУЮ ПЛАТФОРМУ НА 3500 ОЧКОВ
+                    const spring1Platform = {
+                        x: canvas.width / 2 - PLATFORM_WIDTH / 2,
+                        y: target3500Y,
+                        width: PLATFORM_WIDTH,
+                        height: PLATFORM_HEIGHT,
+                        type: 'normal',
+                        moveDirection: 1,
+                        moveSpeed: 0, // Не двигается
+                        isSpring1Platform: true // Защита от удаления
+                    };
+                    platforms.push(spring1Platform);
+                    
+                    // Ставим портал на эту платформу (СВЕРХУ)
+                    createInvertSpring(spring1Platform.x, spring1Platform.y, spring1Platform.width, spring1Platform.height, true);
+                    invertSpring1Created = true;
+                    console.log('🌀 ПОРТАЛ #1 (ПЕРЕВОРОТ) СОЗДАН НА 3500 ОЧКАХ! Y:', target3500Y);
+                }
+                
+                // СОЗДАНИЕ ПОРТАЛА #2 (ВОЗВРАТ) - на 3950 создаём платформу для 4000 очков!
+                if (score >= 3950 && !invertSpring2Created) {
+                    // Y-координата для 4000 очков: y = -4000 * 10 = -40000
+                    const target4000Y = -40000;
+                    
+                    // УДАЛЯЕМ все платформы рядом (±100px) чтобы не было дублей
+                    platforms = platforms.filter(p => Math.abs(p.y - target4000Y) > 100);
+                    
+                    // СОЗДАЁМ СПЕЦИАЛЬНУЮ ПЛАТФОРМУ НА 4000 ОЧКОВ
+                    const spring2Platform = {
+                        x: canvas.width / 2 - PLATFORM_WIDTH / 2,
+                        y: target4000Y,
+                        width: PLATFORM_WIDTH,
+                        height: PLATFORM_HEIGHT,
+                        type: 'normal',
+                        moveDirection: 1,
+                        moveSpeed: 0, // Не двигается
+                        isSpring2Platform: true // Защита от удаления
+                    };
+                    platforms.push(spring2Platform);
+                    
+                    // Ставим портал на эту платформу (СНИЗУ, для удобного подбора в инвертированном режиме)
+                    createInvertSpring(spring2Platform.x, spring2Platform.y, spring2Platform.width, spring2Platform.height, false);
+                    invertSpring2Created = true;
+                    console.log('🌀 ПОРТАЛ #2 (ВОЗВРАТ) СОЗДАН НА 4000 ОЧКАХ! Y:', target4000Y);
+                }
             }
 
             // Вычисляем высоту игрока для динамической сложности
@@ -1417,9 +1610,15 @@
             const difficultyLevel = Math.floor(playerHeight / 1000); // Уровень сложности каждые 1000 пикселей
             
             // Количество платформ уменьшается с высотой (базовое 35, минимум 18)
-            const platformsToGenerate = Math.max(18, 35 - difficultyLevel);
+            let platformsToGenerate = Math.max(18, 35 - difficultyLevel);
             // Расстояние между платформами увеличивается с высотой (базовое 70, максимум 95)
-            const currentSpacing = Math.min(95, 70 + difficultyLevel * 3);
+            let currentSpacing = Math.min(95, 70 + difficultyLevel * 3);
+            
+            // В ИНВЕРТИРОВАННОМ РЕЖИМЕ уменьшаем количество платформ (проверяем состояние игрока, а не очки!)
+            if (player.isInverted) {
+                platformsToGenerate = Math.max(7, Math.floor(platformsToGenerate * 0.4)); // 60% меньше, минимум 7
+                currentSpacing = Math.min(128, Math.floor(currentSpacing * 1.35)); // 35% больше, максимум 128
+            }
             
             // Генерация новых платформ выше игрока
             if (platforms.length > 0) {
@@ -1446,7 +1645,7 @@
             let hasActiveJetpack = false;
             if (player.hasJetpack && player.jetpackStartTime > 0) {
                 const elapsed = currentTime - player.jetpackStartTime;
-                hasActiveJetpack = (elapsed < 1500);
+                hasActiveJetpack = (elapsed < player.jetpackDuration);
             }
             const hasImmunity = hasActiveJetpack || (player.immunityEndTime > 0 && currentTime < player.immunityEndTime);
             
@@ -1485,10 +1684,13 @@
             }
 
             // Удаление объектов за пределами экрана (внизу)
-            // НО сохраняем фонарную платформу (Y = -20000)
+            // НО сохраняем фонарную платформу (Y = -20000) и порталовые платформы
             const lanternPlatformY = -20000;
             platforms = platforms.filter(p => {
-                // Сохраняем фонарную платформу если фонарь создан
+                // Сохраняем специальные платформы (фонарь, порталы)
+                if (p.isSpring1Platform || p.isSpring2Platform) {
+                    return true; // Всегда сохраняем порталовые платформы
+                }
                 if (lanternCreated && Math.abs(p.y - lanternPlatformY) < 10) {
                     return true; // Всегда сохраняем фонарную платформу
                 }
@@ -1498,6 +1700,7 @@
             jetpacks = jetpacks.filter(j => j.y < cameraY + canvas.height + 1000);
             springs = springs.filter(s => s.y < cameraY + canvas.height + 1000);
             lanterns = lanterns.filter(l => l.y < cameraY + canvas.height + 1000);
+            invertSprings = invertSprings.filter(s => s.y < cameraY + canvas.height + 1000);
 
             // Проигрыш (падение вниз за пределы экрана)
             const playerScreenY = player.y - cameraY;
@@ -1580,7 +1783,7 @@
                             const drawHeight = jetpack.size * aspectRatio;
                             
                             // Эффект свечения/сияния
-                            const glowIntensity = 0.6 + 0.4 * Math.sin(Date.now() / 200); // Пульсирующее свечение
+                            const glowIntensity = 0.6 + 0.4 * Math.sin(Date.now() / 200);
                             
                             // Рисуем несколько слоев свечения
                             for (let i = 3; i > 0; i--) {
@@ -1685,6 +1888,58 @@
                 }
 
                 // Пружины скрыты (не рисуем)
+                
+                // Инвертирующие порталы (красивая версия из теста!)
+                for (let spring of invertSprings) {
+                    const screenY = spring.y - cameraY;
+                    if (screenY > -100 && screenY < canvas.height + 100) {
+                        const centerX = spring.x + spring.size / 2;
+                        const centerY = screenY + spring.size / 2;
+                        const radius = spring.size / 2;
+                        
+                        ctx.save();
+                        
+                        // Вихревые кольца портала
+                        const color1 = spring.invertTo ? '#ff4444' : '#4444ff'; // Красный для переворота, синий для возврата
+                        const color2 = spring.invertTo ? '#ff8844' : '#8844ff';
+                        
+                        const gradient = ctx.createRadialGradient(centerX, centerY, radius * 0.2, centerX, centerY, radius * 0.9);
+                        gradient.addColorStop(0, color1);
+                        gradient.addColorStop(0.5, color2);
+                        gradient.addColorStop(1, 'rgba(255, 255, 255, 0.2)');
+                        
+                        // Рисуем вихревые кольца
+                        for (let i = 0; i < 3; i++) {
+                            ctx.strokeStyle = gradient;
+                            ctx.lineWidth = 6;
+                            ctx.lineCap = 'round';
+                            ctx.beginPath();
+                            ctx.arc(centerX, centerY, radius * 0.4 + i * (radius * 0.2), i * 0.5, Math.PI * 2 - i * 0.5);
+                            ctx.stroke();
+                        }
+                        
+                        // Яркий центр портала
+                        const centerGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius * 0.3);
+                        centerGradient.addColorStop(0, '#ffffff');
+                        centerGradient.addColorStop(0.5, color1);
+                        centerGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                        
+                        ctx.fillStyle = centerGradient;
+                        ctx.beginPath();
+                        ctx.arc(centerX, centerY, radius * 0.3, 0, Math.PI * 2);
+                        ctx.fill();
+                        
+                        // Пульсирующий эффект
+                        const pulse = 0.8 + 0.2 * Math.sin(Date.now() / 200);
+                        ctx.globalAlpha = pulse;
+                        ctx.fillStyle = '#fff';
+                        ctx.beginPath();
+                        ctx.arc(centerX, centerY, radius * 0.15, 0, Math.PI * 2);
+                        ctx.fill();
+                        
+                        ctx.restore();
+                    }
+                }
 
                 // Монстры - ОТКЛЮЧЕНЫ
                 // Отрисовка монстров временно отключена
@@ -1697,7 +1952,7 @@
                 let hasActiveJetpack = false;
                 if (player.hasJetpack && player.jetpackStartTime > 0) {
                     const elapsed = drawTime - player.jetpackStartTime;
-                    hasActiveJetpack = (elapsed < 1500);
+                    hasActiveJetpack = (elapsed < player.jetpackDuration);
                 }
                 const hasImmunity = hasActiveJetpack || (player.immunityEndTime > 0 && drawTime < player.immunityEndTime);
                 
@@ -1739,8 +1994,31 @@
                         ctx.globalAlpha = 1.0;
                     }
                     
-                    // Рисуем изображение персонажа
-                    ctx.drawImage(currentPlayerImage, player.x, playerScreenY, player.width, player.height);
+                    // ПЕРЕВОРОТ ПЕРСОНАЖА (анимация или статичный)
+                    if (player.isFlipping) {
+                        // Анимация переворота
+                        const elapsed = Date.now() - player.flipStartTime;
+                        let rotation = 0;
+                        if (elapsed < FLIP_DURATION) {
+                            const progress = elapsed / FLIP_DURATION;
+                            rotation = player.isInverted ? (progress * 180) : (180 - progress * 180);
+                        } else {
+                            player.isFlipping = false;
+                            rotation = player.isInverted ? 180 : 0;
+                        }
+                        ctx.save();
+                        ctx.translate(player.x + player.width / 2, playerScreenY + player.height / 2);
+                        ctx.rotate(rotation * Math.PI / 180);
+                        ctx.drawImage(currentPlayerImage, -player.width / 2, -player.height / 2, player.width, player.height);
+                        ctx.restore();
+                    } else {
+                        // Статичный переворот (если уже перевернут)
+                        ctx.save();
+                        ctx.translate(player.x + player.width / 2, playerScreenY + player.height / 2);
+                        ctx.rotate(player.isInverted ? Math.PI : 0); // 180 градусов если перевернут
+                        ctx.drawImage(currentPlayerImage, -player.width / 2, -player.height / 2, player.width, player.height);
+                        ctx.restore();
+                    }
                     
                     ctx.globalAlpha = 1.0; // Возвращаем нормальную прозрачность
                 } else {
@@ -1764,18 +2042,18 @@
                 // СТРОГО: проверяем время и отключаем ранец если нужно
                 
                 // ===== ЭФФЕКТ ТЕМНОТЫ =====
-                // Темнота появляется ПОСЛЕ подбора фонаря и длится от 2000 до 4000 очков
-                // После 3500 очков начинает светлеть, на 4000 полностью светло
+                // Темнота появляется ПОСЛЕ подбора фонаря и длится от 2000 до 3000 очков
+                // После 2500 очков начинает светлеть, на 3000 полностью светло
                 if (lanternY !== null && player.hasLantern) {
                     const darknessStartScreenY = lanternY - cameraY;
                     
                     // Вычисляем коэффициент затухания темноты (для рассвета)
                     let darknessMultiplier = 1.0;
-                    if (score >= 3500 && score < 4000) {
-                        // Постепенное осветление от 3500 до 4000 очков
-                        darknessMultiplier = 1.0 - ((score - 3500) / 500); // От 1.0 до 0.0
-                    } else if (score >= 4000) {
-                        // На 4000+ очков - полностью светло, фонарь исчезает
+                    if (score >= 2500 && score < 3000) {
+                        // Постепенное осветление от 2500 до 3000 очков
+                        darknessMultiplier = 1.0 - ((score - 2500) / 500); // От 1.0 до 0.0
+                    } else if (score >= 3000) {
+                        // На 3000+ очков - полностью светло, фонарь исчезает
                         player.hasLantern = false;
                         player.lightRadius = 0;
                         darknessMultiplier = 0;
@@ -1962,6 +2240,8 @@
                 
             }
             
+            // ПЕРЕВОРОТ UI (счета) при инвертированном режиме
+            scoreEl.style.transform = player.isInverted ? 'rotate(180deg)' : 'rotate(0deg)';
         }
 
         // Рисование облаков
